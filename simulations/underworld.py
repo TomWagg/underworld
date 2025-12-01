@@ -67,6 +67,10 @@ singles = initial_pop.copy()
 singles.initC["porb"] = 1e20
 singles.initC["ecc"] = 0.0
 
+cols = ["natal_kick_1", "phi_1", "theta_1", "natal_kick_2", "phi_2", "theta_2"]
+for col in cols:
+    singles.initC[col] = -100.0
+
 # perform steller evolution for singles
 start = time.time()
 singles.perform_stellar_evolution()
