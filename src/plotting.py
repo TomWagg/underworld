@@ -3,6 +3,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import astropy.units as u
 from scipy.ndimage import gaussian_filter
+from scipy.optimize import curve_fit
 
 
 plt.rc('font', family='serif')
@@ -141,3 +142,95 @@ def plot_side_on_density(xs, zs, labels, xlim=20, zlim=12, n_bins=200, sigma=1.0
         plt.show()
 
     return fig, ax
+
+
+def nice_transparent_hist(ax, data, bins, label, colour, density):
+    ax.hist(data, bins=bins, color=colour, lw=2, histtype='step',  density=density)
+    ax.hist(data, bins=bins, color=colour, alpha=0.4, density=density, label=label)
+
+
+def compare_table_quantity(pops, quantity, kstar, bins, xlabel, ylabel, density=True, table_name="final_bpp",
+                           fig=None, ax=None, show=True, **settings):
+    if fig is None or ax is None:
+        fig, ax = plt.subplots()
+
+    if not isinstance(kstar, (list, np.ndarray)):
+        kstar = [kstar]
+
+    for pop in pops:
+        data = np.concatenate((
+            getattr(pop, table_name)[f"{quantity}_1"][pop.final_bpp["kstar_1"].isin(kstar)],
+            getattr(pop, table_name)[f"{quantity}_2"][pop.final_bpp["kstar_2"].isin(kstar)],
+        ))
+
+        nice_transparent_hist(
+            ax=ax, data=data, bins=bins,
+            label=f"{pop.label}\nN={len(data)}", colour=pop.colour,
+            density=density
+        )
+
+    ax.set(
+        xlabel=xlabel,
+        ylabel=ylabel,
+        **settings
+    )
+
+    ax.legend()
+
+    if show:
+        plt.show()
+
+    return fig, ax
+
+
+def exponential(x, a, b):
+    return a * np.exp(-b * x)
+
+
+def estimate_scale_height(z, bins=np.linspace(0, 2, 101),
+                          plot=False, fig=None, ax=None, show=True,
+                          label="", colour="black",
+                          **kwargs):
+    """Estimate the scale height of a distribution given z-positions."""
+    z = np.abs(z)
+
+    # remove units for calculation if they exist
+    if hasattr(z, 'unit'):
+        z = z.to(u.kpc).value
+
+    hist, bin_edges = np.histogram(z, bins=bins)
+    bin_centres = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+    scale_height = bin_centres[hist < hist.max() / np.e][0]
+
+    smooth_hist = gaussian_filter(hist, sigma=2)
+
+    p0 = [smooth_hist.max(), 1 / scale_height]
+    popt, pcov = curve_fit(exponential, bin_centres, smooth_hist, p0=p0)
+    scale_height = 1 / popt[1]
+
+    if plot:
+
+        if fig is None or ax is None:
+            fig, ax = plt.subplots()
+
+        ax.plot(bin_centres, hist, label=label, color=colour)
+        ax.plot(bin_centres, exponential(bin_centres, *popt), color=colour, ls='--', alpha=0.5)
+
+        ax.axvline(scale_height, color=colour, ls='dotted', alpha=0.5)
+        ax.annotate(f"{scale_height * 1000:.0f} pc", xy=(scale_height, smooth_hist.max()), fontsize=0.6*fs,
+                    rotation=90, color=colour, ha='center', va='top', bbox=dict(boxstyle="round,pad=0.3",
+                                                                                fc="white", ec=colour))
+
+        ax.set(
+            xlabel="|z| (kpc)",
+            ylabel="Count",
+            **kwargs
+        )
+        ax.legend(fontsize=0.7*fs)
+
+        if show:
+            plt.show()
+
+        return scale_height, fig, ax
+    else:
+        return scale_height, None, None
