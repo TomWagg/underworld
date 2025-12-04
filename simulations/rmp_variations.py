@@ -5,7 +5,7 @@ import time
 
 very_start = time.time()
 
-remnantflags = [0, 3]
+remnantflags = [2, 3]
 
 for remnantflag in remnantflags:
     print(f"Starting underworld simulation with remnantflag={remnantflag}")
