@@ -200,6 +200,9 @@ def estimate_scale_height(z, bins=np.linspace(0, 2, 101),
 
     hist, bin_edges = np.histogram(z, bins=bins)
     bin_centres = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+
+    hist = hist/hist.max()
+
     scale_height = bin_centres[hist < hist.max() / np.e][0]
 
     smooth_hist = gaussian_filter(hist, sigma=2)
@@ -223,7 +226,7 @@ def estimate_scale_height(z, bins=np.linspace(0, 2, 101),
 
         ax.set(
             xlabel="|z| (kpc)",
-            ylabel="Count",
+            ylabel=kwargs.pop('ylabel', r'd$N$/d$|z|$'),
             **kwargs
         )
         ax.legend(fontsize=0.7*fs)
@@ -234,3 +237,36 @@ def estimate_scale_height(z, bins=np.linspace(0, 2, 101),
         return scale_height, fig, ax
     else:
         return scale_height, None, None
+
+
+def absolute_galactocentric_height(pops, kinematics, co_type="CO", fig=None, axes=None, show=True):
+    if fig is None or axes is None:
+        fig, axes = plt.subplots(1, 2, figsize=(20, 6))
+
+    scales = ['linear', 'log']
+    bin_list = [np.linspace(0, 10, 501), np.geomspace(8e-4, 3e4, 120)]
+    labels = ['Inner 10 kpc', 'Full population']
+
+    for ax, scale, bins, label in zip(axes, scales, bin_list, labels):
+        print(label)
+        for pop in pops:
+            co_pos = kinematics[pop.label]["pos"][co_type]
+
+            mask = np.abs(co_pos[:, 2].to(u.kpc).value) < bins[-1]
+            print(f"  {pop.label} fraction within 0.5 kpc {(abs(co_pos[:, 2].to(u.kpc).value) < 0.5).sum() / mask.sum():1.2f}")
+
+            ax.hist(np.abs(co_pos[:, 2].to(u.kpc).value), bins=bins, histtype='step', lw=2, color=pop.colour)
+            ax.hist(np.abs(co_pos[:, 2].to(u.kpc).value), bins=bins, alpha=0.4, color=pop.colour,
+                    label=f'{pop.label} (N={len(co_pos[mask])})')
+
+        ax.set(
+            xscale=scale,
+            xlabel=r'$|z|$ [kpc]',
+            ylabel=r'$N_{\rm CO}$',
+        )
+        ax.legend(title=label, fontsize=fs*0.5)
+
+    if show:
+        plt.show()
+
+    return fig, axes
