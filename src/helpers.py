@@ -87,7 +87,17 @@ def get_underworld_binaries(pops, verbose=False):
         if verbose:
             print(f"{pop.label} Underworld Binaries (scale up by {scale_up:.0f}x):")
             for label, table in underworld_binaries[pop.label].items():
-                print(f"  {label}:{' ' * (9 - len(label))} {len(table):.0f}  \t{len(table) * scale_up:.1e} (scaled)")
+                avg_bh_mass = np.mean(np.concatenate((
+                    table["mass_1"][table["kstar_1"] == 14],
+                    table["mass_2"][table["kstar_2"] == 14],
+                ))) if (table["kstar_1"] == 14).any() or (table["kstar_2"] == 14).any() else 0
+                avg_ns_mass = np.mean(np.concatenate((
+                    table["mass_1"][table["kstar_1"] == 13],
+                    table["mass_2"][table["kstar_2"] == 13],
+                ))) if (table["kstar_1"] == 13).any() or (table["kstar_2"] == 13).any() else 0
+
+                avg_sep = np.mean(table["sep"])
+                print(f"  {label}:{' ' * (9 - len(label))} {len(table):.0f}  \t{len(table) * scale_up:.1e} (scaled)\t{avg_bh_mass:.1f} Msun \t{avg_ns_mass:.1f} Msun \t {avg_sep:.1e} Rsun")
                 if label == "BH-Star":
                     print()
             print()

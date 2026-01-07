@@ -26,7 +26,7 @@ plt.rcParams.update(params)
 
 
 def plot_side_on_density(xs, zs, labels, xlim=20, zlim=12, n_bins=200, sigma=1.0, apply_smoothing=True,
-                         contours=[1, 10, 100, 1000],
+                         contours=[1, 10, 100, 1000], norm="log",
                          fig=None, ax=None, show=True):
     """Plot side-on density distribution of objects given x and z coordinates.
 
@@ -98,12 +98,24 @@ def plot_side_on_density(xs, zs, labels, xlim=20, zlim=12, n_bins=200, sigma=1.0
     for plotting, label in zip(to_plot, labels):
         smoothed_hist, extent = plotting
 
+        if norm == 'log':
+            kwargs = {
+                'norm': mpl.colors.LogNorm(vmin=1, vmax=upper_lim)
+            }
+        else:
+            kwargs = {
+                'vmin': 1,
+                'vmax': upper_lim / 2
+            }
+
+        print(kwargs)
+
         im = ax.imshow(
             smoothed_hist.T,
             origin='lower',
             extent=extent,
             cmap='magma',
-            norm=mpl.colors.LogNorm(vmin=1, vmax=upper_lim)
+            **kwargs
         )
 
         if contours is not None and len(contours) > 0:
@@ -144,12 +156,13 @@ def plot_side_on_density(xs, zs, labels, xlim=20, zlim=12, n_bins=200, sigma=1.0
     return fig, ax
 
 
-def nice_transparent_hist(ax, data, bins, label, colour, density):
-    ax.hist(data, bins=bins, color=colour, lw=2, histtype='step',  density=density)
+def nice_transparent_hist(ax, data, bins, label, colour, density, lw=2):
+    ax.hist(data, bins=bins, color=colour, lw=lw, histtype='step',  density=density)
     ax.hist(data, bins=bins, color=colour, alpha=0.4, density=density, label=label)
 
 
 def compare_table_quantity(pops, quantity, kstar, bins, xlabel, ylabel, density=True, table_name="final_bpp",
+                           lw=2,
                            fig=None, ax=None, show=True, **settings):
     if fig is None or ax is None:
         fig, ax = plt.subplots()
@@ -166,7 +179,7 @@ def compare_table_quantity(pops, quantity, kstar, bins, xlabel, ylabel, density=
         nice_transparent_hist(
             ax=ax, data=data, bins=bins,
             label=f"{pop.label}\nN={len(data)}", colour=pop.colour,
-            density=density
+            density=density, lw=lw
         )
 
     ax.set(
@@ -187,9 +200,20 @@ def exponential(x, a, b):
     return a * np.exp(-b * x)
 
 
-def estimate_scale_height(z, bins=np.linspace(0, 2, 101),
+def double_exponential(x, a, w, b1, b2):
+    """Double exponential function for fitting."""
+    return a * (w * np.exp(-b1 * x) + (1 - w) * np.exp(-b2 * x))
+
+
+def exp_plus_sech2(x, a, w, b1, b2):
+    """Exponential plus sech^2 function for fitting."""
+    return a * (w * np.exp(-b1 * x) + (1 - w) * 1 / (np.cosh(b2 * x))**2)
+
+
+def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
                           plot=False, fig=None, ax=None, show=True,
-                          label="", colour="black",
+                          label="", colour="black", n_components=1,
+                          scale_height_locs=[None, None],
                           **kwargs):
     """Estimate the scale height of a distribution given z-positions."""
     z = np.abs(z)
@@ -207,9 +231,17 @@ def estimate_scale_height(z, bins=np.linspace(0, 2, 101),
 
     smooth_hist = gaussian_filter(hist, sigma=2)
 
-    p0 = [smooth_hist.max(), 1 / scale_height]
-    popt, pcov = curve_fit(exponential, bin_centres, smooth_hist, p0=p0)
-    scale_height = 1 / popt[1]
+    if n_components == 1:
+        p0 = [smooth_hist.max(), 1 / scale_height]
+        popt, pcov = curve_fit(exponential, bin_centres, smooth_hist, p0=p0)
+        scale_height = [1 / popt[1]]
+    else:
+        p0 = [smooth_hist.max(), 0.5, 2, 2]
+        popt, pcov = curve_fit(exp_plus_sech2, bin_centres, smooth_hist, p0=p0,
+                               bounds=([0, 0, 0, 0], [np.inf, 1, np.inf, np.inf]))
+        scale_height = [1 / popt[2], 1 / popt[3]]
+        # print(popt)
+        # print(pcov)
 
     if plot:
 
@@ -217,12 +249,17 @@ def estimate_scale_height(z, bins=np.linspace(0, 2, 101),
             fig, ax = plt.subplots()
 
         ax.plot(bin_centres, hist, label=label, color=colour)
-        ax.plot(bin_centres, exponential(bin_centres, *popt), color=colour, ls='--', alpha=0.5)
 
-        ax.axvline(scale_height, color=colour, ls='dotted', alpha=0.5)
-        ax.annotate(f"{scale_height * 1000:.0f} pc", xy=(scale_height, smooth_hist.max()), fontsize=0.6*fs,
-                    rotation=90, color=colour, ha='center', va='top', bbox=dict(boxstyle="round,pad=0.3",
-                                                                                fc="white", ec=colour))
+        plot_func = exp_plus_sech2 if n_components == 2 else exponential
+        ax.plot(bin_centres, plot_func(bin_centres, *popt), color=colour, ls='--', alpha=0.5)
+
+        for s, loc in zip(scale_height, scale_height_locs):
+            loc = smooth_hist.max() if loc is None else loc
+            print(s)
+            ax.axvline(s, color=colour, ls='dotted', alpha=0.5)
+            ax.annotate(f"{s * 1000:.0f} pc", xy=(s, loc), fontsize=0.6*fs,
+                        rotation=90, color=colour, ha='center', va='top', bbox=dict(boxstyle="round,pad=0.3",
+                                                                                    fc="white", ec=colour))
 
         ax.set(
             xlabel="|z| (kpc)",

@@ -19,6 +19,10 @@ for remnantflag in remnantflags:
 
     initial_pop.initC["remnantflag"] = remnantflag
 
+    cols = ["natal_kick_1", "phi_1", "theta_1", "natal_kick_2", "phi_2", "theta_2"]
+    for col in cols:
+        initial_pop.initC[col] = -100.0
+
     start = time.time()
     initial_pop.perform_stellar_evolution()
     print(f"   Performed stellar evolution in {time.time() - start:1.2f} seconds")
