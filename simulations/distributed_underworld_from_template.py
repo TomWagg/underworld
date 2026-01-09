@@ -55,8 +55,13 @@ def vary_the_underworld(output_dir, processes, simulation_name, file_suffix,
             raise ValueError(f"Parameter {param} not found in initial conditions columns!")
 
     if reset_kicks:
-        for col in ["natal_kick_1", "phi_1", "theta_1", "natal_kick_2", "phi_2", "theta_2"]:
+        for col in ["natal_kick_1", "phi_1", "theta_1", "natal_kick_2", "phi_2", "theta_2",
+                    "mean_anomaly_1", "mean_anomaly_2"]:
             initial_pop.initC[col] = -100.0
+
+        # drop randomseed column if it exists
+        if "randomseed" in initial_pop.initC.columns:
+            initial_pop.initC.drop(columns=["randomseed"], inplace=True)
 
     initial_pop.processes = processes
     initial_pop.galactic_potential = gp.MilkyWayPotential(version='v2')
