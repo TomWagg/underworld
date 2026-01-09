@@ -214,34 +214,49 @@ def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
                           plot=False, fig=None, ax=None, show=True,
                           label="", colour="black", n_components=1,
                           scale_height_locs=[None, None],
+                          R=None, Rlims=(7.5, 8.5),
                           **kwargs):
     """Estimate the scale height of a distribution given z-positions."""
     z = np.abs(z)
+
+    if R is not None:
+        R = R.to(u.kpc).value
+        mask = (R >= Rlims[0]) & (R < Rlims[1])
+        z = z[mask]
 
     # remove units for calculation if they exist
     if hasattr(z, 'unit'):
         z = z.to(u.kpc).value
 
-    hist, bin_edges = np.histogram(z, bins=bins)
+    hist, bin_edges = np.histogram(z, bins=bins, range=kwargs["xlim"])
     bin_centres = 0.5 * (bin_edges[:-1] + bin_edges[1:])
 
     hist = hist/hist.max()
 
     scale_height = bin_centres[hist < hist.max() / np.e][0]
 
-    smooth_hist = gaussian_filter(hist, sigma=2)
+    smooth_hist = gaussian_filter(hist, sigma=0.5)
+
+    z_range = np.linspace(0, bin_edges.max(), 1000)
 
     if n_components == 1:
         p0 = [smooth_hist.max(), 1 / scale_height]
         popt, pcov = curve_fit(exponential, bin_centres, smooth_hist, p0=p0)
         scale_height = [1 / popt[1]]
+
+        fit_pdf = exponential(z_range, *popt)
+        fit_pdf /= fit_pdf.max()
+        scale_height = [z_range[fit_pdf <= (1 / np.e)][0]]
+
     else:
         p0 = [smooth_hist.max(), 0.5, 2, 2]
         popt, pcov = curve_fit(exp_plus_sech2, bin_centres, smooth_hist, p0=p0,
                                bounds=([0, 0, 0, 0], [np.inf, 1, np.inf, np.inf]))
         scale_height = [1 / popt[2], 1 / popt[3]]
-        # print(popt)
-        # print(pcov)
+
+        fit_pdf = exp_plus_sech2(z_range, *popt)
+        fit_pdf /= fit_pdf.max()
+        scale_height = [z_range[fit_pdf <= (1 / np.e)][0]]
 
     if plot:
 
@@ -255,7 +270,6 @@ def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
 
         for s, loc in zip(scale_height, scale_height_locs):
             loc = smooth_hist.max() if loc is None else loc
-            print(s)
             ax.axvline(s, color=colour, ls='dotted', alpha=0.5)
             ax.annotate(f"{s * 1000:.0f} pc", xy=(s, loc), fontsize=0.6*fs,
                         rotation=90, color=colour, ha='center', va='top', bbox=dict(boxstyle="round,pad=0.3",
