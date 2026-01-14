@@ -222,7 +222,9 @@ def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
     if R is not None:
         R = R.to(u.kpc).value
         mask = (R >= Rlims[0]) & (R < Rlims[1])
+        print(len(z), "objects before Rlims")
         z = z[mask]
+        print(len(z), "objects in Rlims")
 
     # remove units for calculation if they exist
     if hasattr(z, 'unit'):
@@ -242,6 +244,7 @@ def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
     if n_components == 1:
         p0 = [smooth_hist.max(), 1 / scale_height]
         popt, pcov = curve_fit(exponential, bin_centres, smooth_hist, p0=p0)
+        print(np.sqrt(np.diag(pcov)) * 1000)
         scale_height = [1 / popt[1]]
 
         fit_pdf = exponential(z_range, *popt)
@@ -253,6 +256,7 @@ def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
         popt, pcov = curve_fit(exp_plus_sech2, bin_centres, smooth_hist, p0=p0,
                                bounds=([0, 0, 0, 0], [np.inf, 1, np.inf, np.inf]))
         scale_height = [1 / popt[2], 1 / popt[3]]
+        print(np.sqrt(np.diag(pcov)) * 1000)
 
         fit_pdf = exp_plus_sech2(z_range, *popt)
         fit_pdf /= fit_pdf.max()
@@ -276,10 +280,11 @@ def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
                                                                                     fc="white", ec=colour))
 
         ax.set(
-            xlabel="|z| (kpc)",
+            xlabel="Distance from the Galactic plane, |z| (kpc)",
             ylabel=kwargs.pop('ylabel', r'd$N$/d$|z|$'),
             **kwargs
         )
+        ax.set_xlabel(ax.get_xlabel(), fontsize=0.8*fs)
         ax.legend(fontsize=0.7*fs)
 
         if show:
