@@ -1,5 +1,42 @@
 import numpy as np
 import astropy.units as u
+import cogsworth
+import warnings
+import logging
+
+
+def load_distributed_pop(base_path, parts, label=None, colour=None):
+    if isinstance(parts, int):
+        parts = list(range(parts))
+    n_parts = len(parts)
+    print(f"Loading distributed population{' ' + label if label is not None else ''} from {n_parts} parts")
+    pops = [None for _ in parts]
+    for i, part in enumerate(parts):
+        logging.getLogger("cogsworth").setLevel(logging.ERROR)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            pops[i] = cogsworth.pop.load(f"{base_path}_part{part:d}")
+        logging.getLogger("cogsworth").setLevel(logging.WARNING)
+
+        pops[i].initial_binaries
+        pops[i].initial_galaxy
+        pops[i].initC
+        pops[i].final_bpp
+        pops[i].bin_nums
+        pops[i].final_pos
+        pops[i].final_vel
+        pops[i]._file = None
+
+        extra = f" of {label} " if label is not None else " "
+        print(f"   loaded part {i+1}/{n_parts}{extra}with {len(pops[i])} binaries")
+
+    pop = cogsworth.pop.concat(*pops)
+
+    pop.label = label
+    pop.colour = colour
+    pop.bpp["row_num"] = np.arange(len(pop.bpp))
+
+    return pop
 
 
 def get_kinematics(pops):
@@ -51,6 +88,35 @@ def get_kinematics(pops):
             kinematics[pop.label]["escaped"][co_type] = escaped
 
     return kinematics
+
+
+def get_average_mass_at_z(abs_zs, bh_masses, z_range=np.geomspace(0.1, 10, 1000), window_width=0.1):
+    """Calculate the average black hole mass as a function of absolute distance from the Galactic plane.
+
+    Parameters
+    ----------
+    abs_zs : list of np.ndarray
+        List of arrays containing the absolute z distances of black holes for each population.
+    bh_masses : list of np.ndarray
+        List of arrays containing the black hole masses corresponding to abs_zs.
+    z_range : np.ndarray, optional
+        Array of z values at which to calculate the average mass, by default np.geomspace(0.1, 10, 1000)
+    window_width : float, optional
+        Width of the window around each z value to consider for averaging, by default 0.1
+
+    Returns
+    -------
+    mean_masses : np.ndarray
+        2D array of mean masses with shape (len(abs_zs), len(z_range)).
+    """
+    mean_masses = np.zeros((len(abs_zs), len(z_range)))
+    half_window = window_width / 2
+    for i, z_centre in enumerate(z_range):
+        for j in range(len(abs_zs)):
+            in_window = (abs_zs[j] >= (z_centre - half_window)) & (abs_zs[j] < (z_centre + half_window))
+            mean_masses[j, i] = np.mean(bh_masses[j][in_window]) if np.sum(in_window) > 0 else np.nan
+
+    return mean_masses
 
 
 def get_underworld_binaries(pops, verbose=False):

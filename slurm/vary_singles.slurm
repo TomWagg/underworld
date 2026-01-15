@@ -17,7 +17,7 @@ conda activate cogsworth
 # determine the file suffix based on SLURM_ARRAY_TASK_ID
 file_suffix="_part${SLURM_ARRAY_TASK_ID}"
 
-echo "Starting underworld simulation with file suffix: ${file_suffix}, varying to single stars
+echo "Starting underworld simulation with file suffix: ${file_suffix}, varying to single stars"
 
 # run the distributed underworld simulation
 python /mnt/home/twagg/projects/underworld/simulations/distributed_underworld_singles.py \
