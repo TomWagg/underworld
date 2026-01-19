@@ -47,6 +47,14 @@ def vary_the_underworld(output_dir, processes, simulation_name, file_suffix,
     # delete the bpp, update initC columns as needed
     initial_pop._bpp = None
     initial_pop._kick_info = None
+
+    defaults = {'mm_mu_ns': 400.0, 'mm_mu_bh': 200.0,
+                'maltsev_mode': 0, 'maltsev_fallback': 0.5, 'maltsev_pf_prob': 0.1}
+    for param, value in defaults.items():
+        if param not in initial_pop.initC.columns:
+            print(f"Setting default initial condition parameter: {param} to {value}")
+            initial_pop.initC[param] = value
+
     for param, value in params_to_vary.items():
         if param in initial_pop.initC.columns:
             print(f"Updating initial condition parameter: {param} to {value}")
@@ -62,6 +70,13 @@ def vary_the_underworld(output_dir, processes, simulation_name, file_suffix,
         # drop randomseed column if it exists
         if "randomseed" in initial_pop.initC.columns:
             initial_pop.initC.drop(columns=["randomseed"], inplace=True)
+
+    if "massc_1" in initial_pop.bpp_columns:
+        # swap to mass_co_layer_1, mass_co_layer_2, mass_he_layer_1, mass_he_layer_2
+        initial_pop.bpp_columns.remove("massc_1")
+        initial_pop.bpp_columns.remove("massc_2")
+        initial_pop.bpp_columns += ["massc_co_layer_1", "massc_co_layer_2",
+                                    "massc_he_layer_1", "massc_he_layer_2"]
 
     initial_pop.processes = processes
     initial_pop.galactic_potential = gp.MilkyWayPotential(version='v2')
