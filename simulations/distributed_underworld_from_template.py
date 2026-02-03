@@ -7,7 +7,8 @@ import time
 
 
 def vary_the_underworld(output_dir, processes, simulation_name, file_suffix,
-                        params_to_vary={}, reset_kicks=False):
+                        params_to_vary={}, reset_kicks=False,
+                        template_path="/mnt/ceph/users/twagg/underworld/template/"):
     """
     Run Underworld simulation with cogsworth.
 
@@ -23,6 +24,8 @@ def vary_the_underworld(output_dir, processes, simulation_name, file_suffix,
         Dictionary of parameters to vary in the initial conditions.
     reset_kicks : bool
         Whether to reset supernova kicks to default values.
+    template_path : str
+        Path to the template population files folder.
     """
     # quickly check if output directory exists
     if not exists(output_dir):
@@ -35,13 +38,14 @@ def vary_the_underworld(output_dir, processes, simulation_name, file_suffix,
     print(f"   File suffix: {file_suffix}")
     print(f"   Parameters to vary: {params_to_vary}")
     print(f"   Reset kicks: {reset_kicks}")
+    print(f"   Template path: {template_path}")
 
     very_start = time.time()
 
     # read the template population
     print("Reading the template population")
     start = time.time()
-    initial_pop = cogsworth.pop.load(join(output_dir, f"template/template{file_suffix}"))
+    initial_pop = cogsworth.pop.load(join(template_path, f"template{file_suffix}"))
     print(f"   Loaded template population in {time.time() - start:1.2f} seconds")
 
     # delete the bpp, update initC columns as needed
