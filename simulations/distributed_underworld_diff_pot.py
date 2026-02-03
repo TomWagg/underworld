@@ -32,8 +32,6 @@ def evolve_the_galaxy(output_dir, processes, simulation_name, file_suffix):
     print(f"   File suffix: {file_suffix}")
     print("       EVOLVING the potential")
 
-    static_mw = gp.MilkyWayPotential(version='v2')
-
     time_knots = np.linspace(0, 12, 20) * u.Gyr
 
     # use y = mx + c
@@ -45,21 +43,40 @@ def evolve_the_galaxy(output_dir, processes, simulation_name, file_suffix):
             mass_at_knot[i] = (0.45 + (0.88 - 0.45) / 3.5 * t) * u.Msun
         else:
             mass_at_knot[i] = (0.88 + (1.0 - 0.88) / (12 - 3.5) * (t - 3.5)) * u.Msun
-    mass_at_knot *= static_mw["halo"].parameters["m"].value
+    mass_at_knot *= 5.54e11
 
-    evolving_mw_pot = gp.MilkyWayPotential(version='v2')
-    growing_mw_halo = gp.TimeInterpolatedPotential(
-        gp.NFWPotential, time_knots, m=mass_at_knot, r_s=15.63 * u.kpc, units="galactic"
+    evolving_mw_pot = gp.CCompositePotential(
+        disk=gp.MN3ExponentialDiskPotential(
+            m=4.77e10 * u.Msun,
+            h_R=2.6 * u.kpc,
+            h_z=0.3 * u.kpc,
+            units="galactic"
+        ),
+        bulge=gp.HernquistPotential(
+            m=5e9 * u.Msun,
+            c=1.0 * u.kpc,
+            units="galactic"
+        ),
+        nucleus=gp.HernquistPotential(
+            m=1.81e9 * u.Msun,
+            c=0.07 * u.kpc,
+            units="galactic"
+        ),
+        halo=gp.TimeInterpolatedPotential(
+            gp.NFWPotential,
+            time_knots,
+            m=mass_at_knot,
+            r_s=15.63 * u.kpc,
+            units="galactic"
+        )
     )
-    evolving_mw_pot.lock = False
-    evolving_mw_pot['halo'] = growing_mw_halo
 
     very_start = time.time()
 
     # read the template population
     print("Reading the template population")
     start = time.time()
-    underworld = cogsworth.pop.load(join(output_dir, f"qcflag-5{file_suffix}"))
+    underworld = cogsworth.pop.load(join(output_dir, f"qcflag-5/qcflag-5{file_suffix}"))
     print(f"   Loaded template population in {time.time() - start:1.2f} seconds")
 
     underworld.processes = processes

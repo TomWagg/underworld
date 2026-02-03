@@ -41,12 +41,13 @@ def vary_the_underworld(output_dir, processes, simulation_name, file_suffix,
     # read the template population
     print("Reading the template population")
     start = time.time()
-    initial_pop = cogsworth.pop.load(join(output_dir, f"template{file_suffix}"))
+    initial_pop = cogsworth.pop.load(join(output_dir, f"template/template{file_suffix}"))
     print(f"   Loaded template population in {time.time() - start:1.2f} seconds")
 
     # delete the bpp, update initC columns as needed
     initial_pop._bpp = None
     initial_pop._kick_info = None
+    initial_pop.error_file_path = "./"
 
     defaults = {'mm_mu_ns': 400.0, 'mm_mu_bh': 200.0,
                 'maltsev_mode': 0, 'maltsev_fallback': 0.5, 'maltsev_pf_prob': 0.1}
