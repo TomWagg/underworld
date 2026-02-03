@@ -17,13 +17,17 @@ conda activate cogsworth
 # determine the file suffix based on SLURM_ARRAY_TASK_ID
 file_suffix="_part${SLURM_ARRAY_TASK_ID}"
 
-echo "Starting underworld simulation with file suffix: ${file_suffix}, varying to no fallback and Hobbs kicks"
+for beta in 0.0 0.5 1.0; do
 
-# run the distributed underworld simulation
-python /mnt/home/twagg/projects/underworld/simulations/distributed_underworld_from_template.py \
-    -o /mnt/ceph/users/twagg/underworld/ \
-    -p 64 \
-    -s bhflag-3_kickflag-1 \
-    -f "${file_suffix}" \
-    --vary-params qcflag:5 bhflag:3 kickflag:1 \
-    --reset-kicks
+    echo "Starting underworld simulation with file suffix: ${file_suffix}, varying beta to ${beta}"
+
+    # run the distributed underworld simulation
+    python /mnt/home/twagg/projects/underworld/simulations/distributed_underworld_from_template.py \
+        -o /mnt/ceph/users/twagg/underworld/beta-${beta}/ \
+        -p 64 \
+        -s beta-${beta} \
+        -f "${file_suffix}" \
+        --vary-params qcflag:5 acc_lim:${beta} \
+        --reset-kicks
+
+done

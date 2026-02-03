@@ -21,7 +21,7 @@ echo "Starting underworld simulation with file suffix: ${file_suffix}, varying t
 
 # run the distributed underworld simulation
 python /mnt/home/twagg/projects/underworld/simulations/distributed_underworld_from_template.py \
-    -o /mnt/ceph/users/twagg/underworld/ \
+    -o /mnt/ceph/users/twagg/underworld/kickflag-1/ \
     -p 64 \
     -s kickflag-1 \
     -f "${file_suffix}" \

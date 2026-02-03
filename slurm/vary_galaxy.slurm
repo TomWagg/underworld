@@ -4,7 +4,7 @@
 #SBATCH --partition=cca
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=64
-#SBATCH --time=0:30:00
+#SBATCH --time=0:10:00
 #SBATCH -o /mnt/home/twagg/projects/underworld/logs/logs_%a_%A.out
 #SBATCH -e /mnt/home/twagg/projects/underworld/logs/logs_%a_%A.err
 #SBATCH --mail-type=ALL

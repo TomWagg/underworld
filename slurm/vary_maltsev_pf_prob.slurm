@@ -23,7 +23,7 @@ for prob in 0.0 1.0; do
 
     # run the distributed underworld simulation
     python /mnt/home/twagg/projects/underworld/simulations/distributed_underworld_from_template.py \
-        -o /mnt/ceph/users/twagg/underworld/ \
+        -o /mnt/ceph/users/twagg/underworld/maltsev-pf-prob-${prob}/ \
         -p 64 \
         -s "maltsev-pf-prob-${prob}" \
         -f "${file_suffix}" \

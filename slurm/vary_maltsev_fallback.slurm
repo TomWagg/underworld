@@ -24,7 +24,7 @@ for fallback in 0 0.25 0.5 0.75 1.0; do
 
     # run the distributed underworld simulation
     python /mnt/home/twagg/projects/underworld/simulations/distributed_underworld_from_template.py \
-        -o /mnt/ceph/users/twagg/underworld/ \
+        -o /mnt/ceph/users/twagg/underworld/maltsev-fallback-${fallback}/ \
         -p 64 \
         -s "maltsev-fallback-${fallback}" \
         -f "${file_suffix}" \
