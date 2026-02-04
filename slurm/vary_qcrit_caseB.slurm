@@ -17,23 +17,23 @@ conda activate cogsworth
 # determine the file suffix based on SLURM_ARRAY_TASK_ID
 file_suffix="_part${SLURM_ARRAY_TASK_ID}"
 
-for beta in 0.0 0.5 1.0; do
+for qcrit_caseB in 0.001 1000; do
 
     # skip this item if file is already present
-    if [ -f "/mnt/ceph/users/twagg/underworld/beta-${beta}/beta-${beta}${file_suffix}.h5" ]; then
-        echo "File /mnt/ceph/users/twagg/underworld/beta-${beta}/beta-${beta}${file_suffix}.h5 already exists, skipping..."
+    if [ -f "/mnt/ceph/users/twagg/underworld/qcrit-caseB-${qcrit_caseB}/qcrit-caseB-${qcrit_caseB}${file_suffix}.h5" ]; then
+        echo "File /mnt/ceph/users/twagg/underworld/qcrit-caseB-${qcrit_caseB}/qcrit-caseB-${qcrit_caseB}${file_suffix}.h5 already exists, skipping..."
         continue
     fi
 
-    echo "Starting underworld simulation with file suffix: ${file_suffix}, varying beta to ${beta}"
+    echo "Starting underworld simulation with file suffix: ${file_suffix}, varying qcrit_caseB to ${qcrit_caseB}"
 
     # run the distributed underworld simulation
     python /mnt/home/twagg/projects/underworld/simulations/distributed_underworld_from_template.py \
-        -o /mnt/ceph/users/twagg/underworld/beta-${beta}/ \
+        -o /mnt/ceph/users/twagg/underworld/qcrit-caseB-${qcrit_caseB}/ \
         -p 64 \
-        -s beta-${beta} \
+        -s qcrit-caseB-${qcrit_caseB} \
         -f "${file_suffix}" \
-        --vary-params qcflag:5 acc_lim:${beta} \
+        --vary-params qcflag:5 qcrit_2:${qcrit_caseB} \
         --reset-kicks
 
 done
