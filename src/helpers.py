@@ -3,6 +3,7 @@ import astropy.units as u
 import cogsworth
 import warnings
 import logging
+import h5py as h5
 
 
 def load_distributed_pop(base_path, parts, label=None, colour=None):
@@ -37,6 +38,26 @@ def load_distributed_pop(base_path, parts, label=None, colour=None):
     pop.bpp["row_num"] = np.arange(len(pop.bpp))
 
     return pop
+
+
+def get_shaped_bin_nums(pops):
+    bin_nums = {}
+    for pop in pops:
+        ns_bin_nums = np.concatenate((
+            pop.final_bpp[pop.final_bpp["kstar_1"] == 13]["bin_num"].values,
+            pop.final_bpp[pop.final_bpp["kstar_2"] == 13]["bin_num"].values
+        ))
+        bh_bin_nums = np.concatenate((
+            pop.final_bpp[pop.final_bpp["kstar_1"] == 14]["bin_num"].values,
+            pop.final_bpp[pop.final_bpp["kstar_2"] == 14]["bin_num"].values
+        ))
+        co_bin_nums = np.concatenate((ns_bin_nums, bh_bin_nums))
+        bin_nums[pop.label] = {
+            "NS": ns_bin_nums,
+            "BH": bh_bin_nums,
+            "CO": co_bin_nums,
+        }
+    return bin_nums
 
 
 def get_kinematics(pops):
@@ -168,3 +189,63 @@ def get_underworld_binaries(pops, verbose=False):
                     print()
             print()
     return underworld_binaries
+
+
+def save_postprocessed_data(pops, files, kinematics, masses, bin_nums):
+    """Save the post-processed data to an HDF5 file.
+
+    Parameters
+    ----------
+    pops : cogsworth.Pop
+        The population objects containing the initial galaxy information.
+    files : str
+        The base filenames to save the processed data to (without extension).
+    kinematics : dict
+        Dictionary containing the kinematic data for each population and component.
+    masses : dict
+        Dictionary containing the mass data for each population and component.
+    bin_nums : dict
+        Dictionary containing the binary numbers for each population and component.
+    """
+    for pop, file in zip(pops, files):
+        with h5.File(f"{file}_processed.h5", "w") as f:
+            for comp in ["NS", "BH"]:
+                f.create_dataset(f"{comp}/pos", data=kinematics[pop.label]["pos"][comp])
+                f.create_dataset(f"{comp}/vel", data=kinematics[pop.label]["vel"][comp])
+                f.create_dataset(f"{comp}/escaped", data=kinematics[pop.label]["escaped"][comp])
+                f.create_dataset(f"{comp}/bin_nums", data=bin_nums[pop.label][comp])
+                f.create_dataset(f"{comp}/mass", data=masses[pop.label][comp])
+                f.create_dataset(
+                    f"{comp}/tau",
+                    data=pop.initial_galaxy.tau[np.searchsorted(pop.bin_nums, bin_nums[pop.label][comp])]
+                )
+                f.create_dataset(
+                    f"{comp}/init_z",
+                    data=pop.initial_galaxy.z[np.searchsorted(pop.bin_nums, bin_nums[pop.label][comp])]
+                )
+
+
+def load_postprocessed_data(files, labels):
+    """Load the post-processed data from an HDF5 file.
+
+    Parameters
+    ----------
+    file : str
+        The base filename to load the processed data from (without extension).
+
+    Returns
+    -------
+    dict
+        Dictionary containing the loaded data for each component.
+    """
+    data_dict = {}
+    for file, label in zip(files, labels):
+        data = {}
+        with h5.File(f"{file}_processed.h5", "r") as f:
+            for key in f["BH"].keys():
+                data[key] = {}
+                for comp in ["NS", "BH"]:
+                    data[key][comp] = f[f"{comp}/{key}"][:]
+                data[key]["CO"] = np.concatenate((data[key]["NS"], data[key]["BH"]))
+        data_dict[label] = data
+    return data_dict

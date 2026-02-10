@@ -68,9 +68,13 @@ def plot_side_on_density(xs, zs, labels, xlim=20, zlim=12, n_bins=200, sigma=1.0
     upper_lim = 0
     to_plot = []
 
-    for x, z, extent in zip([np.abs(xs[0].to(u.kpc).value), -np.abs(xs[1].to(u.kpc).value)],
-                            [zs[0].to(u.kpc).value, zs[1].to(u.kpc).value],
+    for x, z, extent in zip([np.abs(xs[0]), -np.abs(xs[1])],
+                            [zs[0], zs[1]],
                             [[0, xlim, -zlim, zlim], [-xlim, 0, -zlim, zlim]]):
+        if hasattr(x, 'unit'):
+            x = x.to(u.kpc).value
+        if hasattr(z, 'unit'):
+            z = z.to(u.kpc).value
         mask = (np.abs(z) < zlim) & (np.abs(x) < xlim)
         x = x[mask]
         z = z[mask]
@@ -220,7 +224,7 @@ def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
     z = np.abs(z)
 
     if R is not None:
-        R = R.to(u.kpc).value
+        R = R.to(u.kpc).value if hasattr(R, 'unit') else R
         mask = (R >= Rlims[0]) & (R < Rlims[1])
         print(len(z), "objects before Rlims")
         z = z[mask]
@@ -308,11 +312,13 @@ def absolute_galactocentric_height(pops, kinematics, co_type="CO", fig=None, axe
         for pop in pops:
             co_pos = kinematics[pop.label]["pos"][co_type]
 
-            mask = np.abs(co_pos[:, 2].to(u.kpc).value) < bins[-1]
-            print(f"  {pop.label} fraction within 0.5 kpc {(abs(co_pos[:, 2].to(u.kpc).value) < 0.5).sum() / mask.sum():1.2f}")
+            pos_val = co_pos[:, 2].to(u.kpc).value if hasattr(co_pos, 'unit') else co_pos[:, 2]
 
-            ax.hist(np.abs(co_pos[:, 2].to(u.kpc).value), bins=bins, histtype='step', lw=2, color=pop.colour)
-            ax.hist(np.abs(co_pos[:, 2].to(u.kpc).value), bins=bins, alpha=0.4, color=pop.colour,
+            mask = np.abs(pos_val) < bins[-1]
+            print(f"  {pop.label} fraction within 0.5 kpc {(np.abs(pos_val) < 0.5).sum() / mask.sum():1.2f}")
+
+            ax.hist(np.abs(pos_val), bins=bins, histtype='step', lw=2, color=pop.colour)
+            ax.hist(np.abs(pos_val), bins=bins, alpha=0.4, color=pop.colour,
                     label=f'{pop.label} (N={len(co_pos[mask])})')
 
         ax.set(
