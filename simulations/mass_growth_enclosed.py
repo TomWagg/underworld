@@ -70,7 +70,10 @@ def get_mass_growth(sim_dir, redshift, radii, out_dir, overwrite=False):
 
     print(f"Processing simulation at {sim_dir} for z={redshift}")
     print(f"Input radii (kpc): {radii}")
-    ≈
+
+    part = gizmo.io.Read.read_snapshots(
+        ["dark", "star", "gas"], "redshift", redshift, sim_dir, snapshot_directory="output"
+    )
     print(f"Read {len(part['dark'])} dark matter particles at z={redshift}")
 
     # calculate the enclosed mass profiles for dark matter, then stars+gas
@@ -92,13 +95,24 @@ def get_mass_growth(sim_dir, redshift, radii, out_dir, overwrite=False):
     baryon_M_enc = np.array([baryon_mass[baryon_r < rr].sum() for rr in radii])
     print(f"Computed enclosed mass profile at z={redshift}")
 
-    dm_R_half, dm_z_half = compute_half_mass_scales(dm_pos, dm_mass)
-    baryon_R_half, baryon_z_half = compute_half_mass_scales(baryon_pos, baryon_mass)
-    print(f"Computed half-mass scales at z={redshift}")
+    star_pos = part["star"].prop("host.distance.principal")
+    star_mass = np.array(part["star"]["mass"])
+
+    R = np.sqrt(star_pos[:, 0]**2 + star_pos[:, 1]**2)
+    z = star_pos[:, 2]
+
+    Rbins = np.linspace(1, 30, 100)
+    zbins = np.linspace(-5, 5, 101)
+    H, xe, ye = np.histogram2d(R, z, bins=(Rbins, zbins), weights=star_mass)
+
+    # volume factor
+    V = 2 * np.pi * (Rbins[1:]**2 - Rbins[:-1]**2)[:, None] * (zbins[1:] - zbins[:-1])[None, :]
+
+    # adjust density by volume
+    dens = H / V
 
     np.savez(out_file, radii=radii, dm_M_enc=dm_M_enc, baryon_M_enc=baryon_M_enc,
-             dm_R_half=dm_R_half, dm_z_half=dm_z_half,
-             baryon_R_half=baryon_R_half, baryon_z_half=baryon_z_half)
+             dens=dens, xe=xe, ye=ye)
     print(f"Saved enclosed mass profile to {out_file}")
 
 
