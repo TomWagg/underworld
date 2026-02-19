@@ -332,3 +332,35 @@ def absolute_galactocentric_height(pops, kinematics, co_type="CO", fig=None, axe
         plt.show()
 
     return fig, axes
+
+
+def plot_avg_mass_vs_z(mean_masses, labels, colours, z_maxes, z_range,
+                       fig=None, ax=None, show=True, save=None):
+    # plot the average mass as a function of |z|
+    if fig is None or ax is None:
+        fig, ax = plt.subplots(figsize=(7, 7))
+
+    for mean_bh, label, c, z_max in zip(mean_masses, labels, colours, z_maxes ):
+        mask = z_range < z_max
+        ax.plot(z_range[mask], mean_bh[mask], lw=2, label=label, color=c)
+
+    ax.axvspan(3, 10, color='gray', alpha=0.3, lw=0)
+
+    ax.set(
+        xscale="log",
+        xlabel=r'Distance from Galactic plane, $|z|$ [kpc]',
+        ylabel='Average BH Mass [M$_\odot$]',
+        xlim=(z_range.min(), z_range.max())
+    )
+
+    ax.set_xlabel(ax.get_xlabel(), fontsize=0.9*fs)
+
+    ax.legend(title="BHs", fontsize=0.7*fs, title_fontsize=0.7*fs)
+
+    ax.yaxis.set_minor_locator(mpl.ticker.MultipleLocator(0.25))
+
+    if save is not None:
+        plt.savefig(save, format="pdf", bbox_inches='tight')
+    if show:
+        plt.show()
+    return fig, ax
