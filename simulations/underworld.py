@@ -2,7 +2,7 @@ import cogsworth
 import gala.potential as gp
 import argparse
 from os.path import join, exists
-from os import mkdir
+import pathlib
 
 import time
 
@@ -74,7 +74,7 @@ def enter_the_underworld(n_binaries, output_dir, processes, simulation_name, fil
 
     template_folder = join(output_dir, "template")
     if not exists(template_folder):
-        mkdir(template_folder)
+        pathlib.Path(template_folder).mkdir(parents=True, exist_ok=True)
 
     initial_pop.save(join(template_folder, f"template{file_suffix}"), overwrite=True)
     print(f"   Saved template population in {time.time() - start:1.2f} seconds")
@@ -89,7 +89,7 @@ def enter_the_underworld(n_binaries, output_dir, processes, simulation_name, fil
 
     simulation_folder = join(output_dir, simulation_name)
     if not exists(simulation_folder):
-        mkdir(simulation_folder)
+        pathlib.Path(simulation_folder).mkdir(parents=True, exist_ok=True) 
 
     start = time.time()
     binary_underworld.save(join(simulation_folder, f"{simulation_name}{file_suffix}"), overwrite=True)

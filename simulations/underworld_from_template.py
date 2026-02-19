@@ -2,7 +2,7 @@ import cogsworth
 import gala.potential as gp
 import argparse
 from os.path import join, exists
-from os import mkdir
+import pathlib
 
 import time
 
@@ -34,7 +34,7 @@ def vary_the_underworld(output_dir, processes, simulation_name, file_suffix,
 
     simulation_folder = join(output_dir, simulation_name)
     if not exists(simulation_folder):
-        mkdir(simulation_folder)
+        pathlib.Path(simulation_folder).mkdir(parents=True, exist_ok=True)
 
     print("Starting Underworld simulation with these parameters:")
     print(f"   Output directory: {output_dir}")
@@ -81,6 +81,12 @@ def vary_the_underworld(output_dir, processes, simulation_name, file_suffix,
     start = time.time()
     initial_pop.perform_stellar_evolution()
     print(f"   Performed stellar evolution in {time.time() - start:1.2f} seconds")
+
+    # if simulation_name == "beta_0.5":
+    #     print("Debugging beta now")
+    #     initial_pop.initC.to_hdf("/mnt/ceph/users/twagg/underworld/problems.h5", key="initC")
+    #     initial_pop.bpp.to_hdf("/mnt/ceph/users/twagg/underworld/problems.h5", key="bpp")
+    #     initial_pop.kick_info.to_hdf("/mnt/ceph/users/twagg/underworld/problems.h5", key="kick_info")
 
     # do galactic evolution only for the binaries that end up as underworld objects
     start = time.time()
