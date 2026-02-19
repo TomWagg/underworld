@@ -21,14 +21,13 @@ echo "Starting mandel_muller underworld simulation with file suffix: ${file_suff
 
 if [ -f "/mnt/ceph/users/twagg/underworld/mandel_muller/mandel_muller${file_suffix}.h5" ]; then
     echo "File /mnt/ceph/users/twagg/underworld/mandel_muller/mandel_muller${file_suffix}.h5 already exists, skipping..."
-    continue
+else
+    # run the distributed underworld simulation
+    python /mnt/home/twagg/projects/underworld/simulations/underworld_from_template.py \
+        -o /mnt/ceph/users/twagg/underworld/ \
+        -p 64 \
+        -s "mandel_muller" \
+        -f "${file_suffix}" \
+        --vary-params remnantflag:5 kickflag:6 mxns:2 rembar_massloss:0.1 \
+        --reset-kicks
 fi
-
-# run the distributed underworld simulation
-python /mnt/home/twagg/projects/underworld/simulations/underworld_from_template.py \
-    -o /mnt/ceph/users/twagg/underworld/ \
-    -p 64 \
-    -s "mandel_muller" \
-    -f "${file_suffix}" \
-    --vary-params remnantflag:5 kickflag:6 mxns:2 rembar_massloss:0.1 \
-    --reset-kicks

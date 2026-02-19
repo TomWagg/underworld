@@ -21,14 +21,13 @@ echo "Starting maltsev_fallback_0.25 underworld simulation with file suffix: ${f
 
 if [ -f "/mnt/ceph/users/twagg/underworld/maltsev_fallback_0.25/maltsev_fallback_0.25${file_suffix}.h5" ]; then
     echo "File /mnt/ceph/users/twagg/underworld/maltsev_fallback_0.25/maltsev_fallback_0.25${file_suffix}.h5 already exists, skipping..."
-    continue
+else
+    # run the distributed underworld simulation
+    python /mnt/home/twagg/projects/underworld/simulations/underworld_from_template.py \
+        -o /mnt/ceph/users/twagg/underworld/ \
+        -p 64 \
+        -s "maltsev_fallback_0.25" \
+        -f "${file_suffix}" \
+        --vary-params remnantflag:6 maltsev_mode:0 maltsev_fallback:0.25 maltsev_pf_prob:0.1 \
+        --reset-kicks
 fi
-
-# run the distributed underworld simulation
-python /mnt/home/twagg/projects/underworld/simulations/underworld_from_template.py \
-    -o /mnt/ceph/users/twagg/underworld/ \
-    -p 64 \
-    -s "maltsev_fallback_0.25" \
-    -f "${file_suffix}" \
-    --vary-params remnantflag:6 maltsev_mode:0 maltsev_fallback:0.25 maltsev_pf_prob:0.1 \
-    --reset-kicks

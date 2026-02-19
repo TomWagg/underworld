@@ -23,17 +23,16 @@ echo "Starting SIMNAMEREPLACE underworld simulation with file suffix: ${file_suf
 
 if [ -f "/mnt/ceph/users/twagg/underworld/SIMNAMEREPLACE/SIMNAMEREPLACE${file_suffix}.h5" ]; then
     echo "File /mnt/ceph/users/twagg/underworld/SIMNAMEREPLACE/SIMNAMEREPLACE${file_suffix}.h5 already exists, skipping..."
-    continue
+else
+    # run the distributed underworld simulation
+    python /mnt/home/twagg/projects/underworld/simulations/underworld_from_template.py \\
+        -o /mnt/ceph/users/twagg/underworld/ \\
+        -p 64 \\
+        -s "SIMNAMEREPLACE" \\
+        -f "${file_suffix}" \\
+        --vary-params PARAMSREPLACE \\
+        --reset-kicks
 fi
-
-# run the distributed underworld simulation
-python /mnt/home/twagg/projects/underworld/simulations/underworld_from_template.py \\
-    -o /mnt/ceph/users/twagg/underworld/ \\
-    -p 64 \\
-    -s "SIMNAMEREPLACE" \\
-    -f "${file_suffix}" \\
-    --vary-params PARAMSREPLACE \\
-    --reset-kicks
 """
 
 variations = []
@@ -66,6 +65,8 @@ for val in [0.0, 1.0]:
 variations.append({"name": "bhflag_3", "params": "bhflag:3"})
 variations.append({"name": "kickflag_1", "params": "kickflag:1"})
 
+files = []
+
 for variation in variations:
     submitter_script = copy(TEMPLATE)
     submitter_script = submitter_script.replace("SIMNAMEREPLACE", variation["name"])
@@ -73,3 +74,7 @@ for variation in variations:
 
     with open(f"variation_{variation['name']}.slurm", "w") as f:
         f.write(submitter_script)
+
+    files.append(variation["name"])
+
+print(files)

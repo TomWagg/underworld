@@ -21,14 +21,13 @@ echo "Starting qcrit_caseB_1000 underworld simulation with file suffix: ${file_s
 
 if [ -f "/mnt/ceph/users/twagg/underworld/qcrit_caseB_1000/qcrit_caseB_1000${file_suffix}.h5" ]; then
     echo "File /mnt/ceph/users/twagg/underworld/qcrit_caseB_1000/qcrit_caseB_1000${file_suffix}.h5 already exists, skipping..."
-    continue
+else
+    # run the distributed underworld simulation
+    python /mnt/home/twagg/projects/underworld/simulations/underworld_from_template.py \
+        -o /mnt/ceph/users/twagg/underworld/ \
+        -p 64 \
+        -s "qcrit_caseB_1000" \
+        -f "${file_suffix}" \
+        --vary-params qcrit_2:1000 \
+        --reset-kicks
 fi
-
-# run the distributed underworld simulation
-python /mnt/home/twagg/projects/underworld/simulations/underworld_from_template.py \
-    -o /mnt/ceph/users/twagg/underworld/ \
-    -p 64 \
-    -s "qcrit_caseB_1000" \
-    -f "${file_suffix}" \
-    --vary-params qcrit_2:1000 \
-    --reset-kicks

@@ -5,8 +5,8 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=64
 #SBATCH --time=0:30:00
-#SBATCH -o /mnt/home/twagg/projects/underworld/logs/logs_kickflag_1_%a_%A.out
-#SBATCH -e /mnt/home/twagg/projects/underworld/logs/logs_kickflag_1_%a_%A.err
+#SBATCH -o /mnt/home/twagg/projects/underworld/logs/logs_fryer_rapid_%a_%A.out
+#SBATCH -e /mnt/home/twagg/projects/underworld/logs/logs_fryer_rapid_%a_%A.err
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=twagg@flatironinstitute.org
 #SBATCH --export=all
@@ -17,17 +17,17 @@ conda activate cogsworth
 # determine the file suffix based on SLURM_ARRAY_TASK_ID
 file_suffix="_part${SLURM_ARRAY_TASK_ID}"
 
-echo "Starting kickflag_1 underworld simulation with file suffix: ${file_suffix}"
+echo "Starting fryer_rapid underworld simulation with file suffix: ${file_suffix}"
 
-if [ -f "/mnt/ceph/users/twagg/underworld/kickflag_1/kickflag_1${file_suffix}.h5" ]; then
-    echo "File /mnt/ceph/users/twagg/underworld/kickflag_1/kickflag_1${file_suffix}.h5 already exists, skipping..."
+if [ -f "/mnt/ceph/users/twagg/underworld/fryer_rapid/fryer_rapid${file_suffix}.h5" ]; then
+    echo "File /mnt/ceph/users/twagg/underworld/fryer_rapid/fryer_rapid${file_suffix}.h5 already exists, skipping..."
 else
     # run the distributed underworld simulation
     python /mnt/home/twagg/projects/underworld/simulations/underworld_from_template.py \
         -o /mnt/ceph/users/twagg/underworld/ \
         -p 64 \
-        -s "kickflag_1" \
+        -s "fryer_rapid" \
         -f "${file_suffix}" \
-        --vary-params kickflag:1 \
+        --vary-params remnantflag:3 \
         --reset-kicks
 fi

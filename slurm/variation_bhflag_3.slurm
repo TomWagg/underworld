@@ -21,14 +21,13 @@ echo "Starting bhflag_3 underworld simulation with file suffix: ${file_suffix}"
 
 if [ -f "/mnt/ceph/users/twagg/underworld/bhflag_3/bhflag_3${file_suffix}.h5" ]; then
     echo "File /mnt/ceph/users/twagg/underworld/bhflag_3/bhflag_3${file_suffix}.h5 already exists, skipping..."
-    continue
+else
+    # run the distributed underworld simulation
+    python /mnt/home/twagg/projects/underworld/simulations/underworld_from_template.py \
+        -o /mnt/ceph/users/twagg/underworld/ \
+        -p 64 \
+        -s "bhflag_3" \
+        -f "${file_suffix}" \
+        --vary-params bhflag:3 \
+        --reset-kicks
 fi
-
-# run the distributed underworld simulation
-python /mnt/home/twagg/projects/underworld/simulations/underworld_from_template.py \
-    -o /mnt/ceph/users/twagg/underworld/ \
-    -p 64 \
-    -s "bhflag_3" \
-    -f "${file_suffix}" \
-    --vary-params bhflag:3 \
-    --reset-kicks

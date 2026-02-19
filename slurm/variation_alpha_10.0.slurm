@@ -21,14 +21,13 @@ echo "Starting alpha_10.0 underworld simulation with file suffix: ${file_suffix}
 
 if [ -f "/mnt/ceph/users/twagg/underworld/alpha_10.0/alpha_10.0${file_suffix}.h5" ]; then
     echo "File /mnt/ceph/users/twagg/underworld/alpha_10.0/alpha_10.0${file_suffix}.h5 already exists, skipping..."
-    continue
+else
+    # run the distributed underworld simulation
+    python /mnt/home/twagg/projects/underworld/simulations/underworld_from_template.py \
+        -o /mnt/ceph/users/twagg/underworld/ \
+        -p 64 \
+        -s "alpha_10.0" \
+        -f "${file_suffix}" \
+        --vary-params alpha1:10.0 \
+        --reset-kicks
 fi
-
-# run the distributed underworld simulation
-python /mnt/home/twagg/projects/underworld/simulations/underworld_from_template.py \
-    -o /mnt/ceph/users/twagg/underworld/ \
-    -p 64 \
-    -s "alpha_10.0" \
-    -f "${file_suffix}" \
-    --vary-params alpha1:10.0 \
-    --reset-kicks
