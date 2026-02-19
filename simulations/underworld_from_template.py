@@ -2,6 +2,7 @@ import cogsworth
 import gala.potential as gp
 import argparse
 from os.path import join, exists
+from os import mkdir
 
 import time
 
@@ -31,6 +32,10 @@ def vary_the_underworld(output_dir, processes, simulation_name, file_suffix,
     if not exists(output_dir):
         raise ValueError(f"Output directory {output_dir} does not exist!")
 
+    simulation_folder = join(output_dir, simulation_name)
+    if not exists(simulation_folder):
+        mkdir(simulation_folder)
+
     print("Starting Underworld simulation with these parameters:")
     print(f"   Output directory: {output_dir}")
     print(f"   Number of processes: {processes}")
@@ -51,14 +56,7 @@ def vary_the_underworld(output_dir, processes, simulation_name, file_suffix,
     # delete the bpp, update initC columns as needed
     initial_pop._bpp = None
     initial_pop._kick_info = None
-    initial_pop.error_file_path = "./"
-
-    defaults = {'mm_mu_ns': 400.0, 'mm_mu_bh': 200.0,
-                'maltsev_mode': 0, 'maltsev_fallback': 0.5, 'maltsev_pf_prob': 0.1}
-    for param, value in defaults.items():
-        if param not in initial_pop.initC.columns:
-            print(f"Setting default initial condition parameter: {param} to {value}")
-            initial_pop.initC[param] = value
+    initial_pop.error_file_path = None
 
     for param, value in params_to_vary.items():
         if param in initial_pop.initC.columns:
@@ -75,13 +73,6 @@ def vary_the_underworld(output_dir, processes, simulation_name, file_suffix,
         # drop randomseed column if it exists
         if "randomseed" in initial_pop.initC.columns:
             initial_pop.initC.drop(columns=["randomseed"], inplace=True)
-
-    if "massc_1" in initial_pop.bpp_columns:
-        # swap to mass_co_layer_1, mass_co_layer_2, mass_he_layer_1, mass_he_layer_2
-        initial_pop.bpp_columns.remove("massc_1")
-        initial_pop.bpp_columns.remove("massc_2")
-        initial_pop.bpp_columns += ["massc_co_layer_1", "massc_co_layer_2",
-                                    "massc_he_layer_1", "massc_he_layer_2"]
 
     initial_pop.processes = processes
     initial_pop.galactic_potential = gp.MilkyWayPotential(version='v2')
@@ -100,7 +91,7 @@ def vary_the_underworld(output_dir, processes, simulation_name, file_suffix,
     print(f"   Performed galactic evolution in {time.time() - start:1.2f} seconds")
 
     start = time.time()
-    underworld.save(join(output_dir, f"{simulation_name}{file_suffix}"), overwrite=True)
+    underworld.save(join(simulation_folder, f"{simulation_name}{file_suffix}"), overwrite=True)
     print(f"   Saved underworld population in {time.time() - start:1.2f} seconds")
 
     print(f"   Number of underworld binaries: {len(underworld)}")
