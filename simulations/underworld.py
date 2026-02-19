@@ -54,7 +54,8 @@ def enter_the_underworld(n_binaries, output_dir, processes, simulation_name, fil
             "verbose": True
         },
         bpp_columns=bpp_columns,
-        store_entire_orbits=False
+        store_entire_orbits=False,
+        error_file_path=None
     )
     initial_pop.BSE_settings["binfrac"] = 1.0
 
