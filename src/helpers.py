@@ -4,9 +4,10 @@ import cogsworth
 import warnings
 import logging
 import h5py as h5
+from os.path import join
 
 
-def load_distributed_pop(base_path, parts, label=None, colour=None):
+def load_distributed_pop(base_path, sim_name, parts, label=None, colour=None):
     if isinstance(parts, int):
         parts = list(range(parts))
     n_parts = len(parts)
@@ -16,7 +17,7 @@ def load_distributed_pop(base_path, parts, label=None, colour=None):
         logging.getLogger("cogsworth").setLevel(logging.ERROR)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            pops[i] = cogsworth.pop.load(f"{base_path}_part{part:d}")
+            pops[i] = cogsworth.pop.load(join(base_path, sim_name, f"{sim_name}_part{part:d}"))
         logging.getLogger("cogsworth").setLevel(logging.WARNING)
 
         pops[i].initial_binaries
@@ -209,6 +210,8 @@ def save_postprocessed_data(pops, files, kinematics, masses, bin_nums):
     """
     for pop, file in zip(pops, files):
         with h5.File(f"{file}_processed.h5", "w") as f:
+            f.attrs["mass_binaries"] = pop.mass_binaries
+            f.attrs["mass_singles"] = pop.mass_singles
             for comp in ["NS", "BH"]:
                 f.create_dataset(f"{comp}/pos", data=kinematics[pop.label]["pos"][comp])
                 f.create_dataset(f"{comp}/vel", data=kinematics[pop.label]["vel"][comp])
@@ -223,6 +226,12 @@ def save_postprocessed_data(pops, files, kinematics, masses, bin_nums):
                     f"{comp}/init_z",
                     data=pop.initial_galaxy.z[np.searchsorted(pop.bin_nums, bin_nums[pop.label][comp])]
                 )
+
+
+class DummyPop:
+    def __init__(self, label, colour):
+        self.label = label
+        self.colour = colour
 
 
 def load_postprocessed_data(files, labels):
@@ -242,6 +251,8 @@ def load_postprocessed_data(files, labels):
     for file, label in zip(files, labels):
         data = {}
         with h5.File(f"{file}_processed.h5", "r") as f:
+            data["mass_binaries"] = f.attrs["mass_binaries"]
+            data["mass_singles"] = f.attrs["mass_singles"]
             for key in f["BH"].keys():
                 data[key] = {}
                 for comp in ["NS", "BH"]:
@@ -249,3 +260,9 @@ def load_postprocessed_data(files, labels):
                 data[key]["CO"] = np.concatenate((data[key]["NS"], data[key]["BH"]))
         data_dict[label] = data
     return data_dict
+
+
+def load_postprocessed_pops(files, labels, colours):
+    pops = [DummyPop(label, colour) for label, colour in zip(labels, colours)]
+    data = load_postprocessed_data(files, labels)
+    return pops, data
