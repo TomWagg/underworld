@@ -209,7 +209,7 @@ def save_postprocessed_data(pops, files, kinematics, masses, bin_nums):
         Dictionary containing the binary numbers for each population and component.
     """
     for pop, file in zip(pops, files):
-        with h5.File(f"{file}_processed.h5", "w") as f:
+        with h5.File(file, "w") as f:
             f.attrs["mass_binaries"] = pop.mass_binaries
             f.attrs["mass_singles"] = pop.mass_singles
             for comp in ["NS", "BH"]:
