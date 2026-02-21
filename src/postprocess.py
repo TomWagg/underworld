@@ -2,7 +2,9 @@ import helpers
 import os
 import numpy as np
 
-files = ['fiducial', 'beta_0.0', 'beta_0.5', 'beta_1.0',
+files = ['fiducial',
+         'singles',
+         'beta_0.0', 'beta_0.5', 'beta_1.0',
          'alpha_0.1', 'alpha_0.5', 'alpha_2.0', 'alpha_10.0',
          'qcrit_caseB_0.001', 'qcrit_caseB_1000',
          'fryer_rapid', 'mandel_muller', 'maltsev_fallback_0.0', 'maltsev_fallback_0.25',
