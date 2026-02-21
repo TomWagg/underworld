@@ -259,7 +259,7 @@ def exp_plus_sech2(x, a, w, b1, b2):
 def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
                           plot=False, fig=None, ax=None, show=True,
                           label="", colour="black", n_components=1,
-                          scale_height_locs=[None, None],
+                          scale_height_loc=None,
                           R=None, Rlims=(7.5, 8.5),
                           **kwargs):
     """Estimate the scale height of a distribution given z-positions."""
@@ -290,23 +290,23 @@ def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
     if n_components == 1:
         p0 = [smooth_hist.max(), 1 / scale_height]
         popt, pcov = curve_fit(exponential, bin_centres, smooth_hist, p0=p0)
-        print(np.sqrt(np.diag(pcov)) * 1000)
-        scale_height = [1 / popt[1]]
 
         fit_pdf = exponential(z_range, *popt)
         fit_pdf /= fit_pdf.max()
-        scale_height = [z_range[fit_pdf <= (1 / np.e)][0]]
+        scale_height = z_range[fit_pdf <= (1 / np.e)][0]
+        scale_height_err = np.sqrt(np.diag(pcov))[1]
 
     else:
         p0 = [smooth_hist.max(), 0.5, 2, 2]
         popt, pcov = curve_fit(exp_plus_sech2, bin_centres, smooth_hist, p0=p0,
                                bounds=([0, 0, 0, 0], [np.inf, 1, np.inf, np.inf]))
         scale_height = [1 / popt[2], 1 / popt[3]]
-        print(np.sqrt(np.diag(pcov)) * 1000)
+        # print(np.sqrt(np.diag(pcov)) * 1000)
 
         fit_pdf = exp_plus_sech2(z_range, *popt)
         fit_pdf /= fit_pdf.max()
-        scale_height = [z_range[fit_pdf <= (1 / np.e)][0]]
+        scale_height = z_range[fit_pdf <= (1 / np.e)][0]
+        scale_height_err = max(np.sqrt(np.diag(pcov))[2:4])
 
     if plot:
 
@@ -318,12 +318,11 @@ def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
         plot_func = exp_plus_sech2 if n_components == 2 else exponential
         ax.plot(bin_centres, plot_func(bin_centres, *popt), color=colour, ls='--', alpha=0.5)
 
-        for s, loc in zip(scale_height, scale_height_locs):
-            loc = smooth_hist.max() if loc is None else loc
-            ax.axvline(s, color=colour, ls='dotted', alpha=0.5)
-            ax.annotate(f"{s * 1000:.0f} pc", xy=(s, loc), fontsize=0.6*fs,
-                        rotation=0, color=colour, ha='center', va='top', bbox=dict(boxstyle="round,pad=0.3",
-                                                                                    fc="white", ec=colour))
+        loc = smooth_hist.max() if scale_height_loc is None else scale_height_loc
+        ax.axvline(scale_height, color=colour, ls='dotted', alpha=0.5)
+        ax.annotate(f"{scale_height * 1000:.0f} pc", xy=(scale_height, loc), fontsize=0.6*fs,
+                    rotation=0, color=colour, ha='center', va='top', bbox=dict(boxstyle="round,pad=0.3",
+                                                                                fc="white", ec=colour))
 
         ax.set(
             xlabel="Distance from the Galactic plane, |z| (kpc)",
@@ -336,9 +335,9 @@ def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
         if show:
             plt.show()
 
-        return scale_height, fig, ax
+        return scale_height, scale_height_err, fig, ax
     else:
-        return scale_height, None, None
+        return scale_height, scale_height_err, None, None
 
 
 def absolute_galactocentric_height(pops, kinematics, co_type="CO", fig=None, axes=None, show=True):
