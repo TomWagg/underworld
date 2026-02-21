@@ -160,9 +160,9 @@ def plot_side_on_density(xs, zs, labels, xlim=20, zlim=12, n_bins=200, sigma=1.0
     return fig, ax
 
 
-def nice_transparent_hist(ax, data, bins, label, colour, density, lw=2):
-    ax.hist(data, bins=bins, color=colour, lw=lw, histtype='step',  density=density)
-    ax.hist(data, bins=bins, color=colour, alpha=0.4, density=density, label=label)
+def nice_transparent_hist(ax, data, bins, label, colour, density, lw=2, alpha=0.4):
+    ax.hist(data, bins=bins, color=colour, lw=lw, histtype='step',  density=density, label=label)
+    ax.hist(data, bins=bins, color=colour, alpha=alpha, density=density)
 
 
 def compare_table_quantity(pops, quantity, kstar, bins, xlabel, ylabel, density=True, table_name="final_bpp",
@@ -193,6 +193,48 @@ def compare_table_quantity(pops, quantity, kstar, bins, xlabel, ylabel, density=
     )
 
     ax.legend()
+
+    if show:
+        plt.show()
+
+    return fig, ax
+
+
+def plot_mass_histogram(pops, data, bins, co_type, xlabel, ylabel, density=True, lw=2, alpha=0.4,
+                        fig=None, ax=None, show=True, labels=None, colours=None, legend_title=None,
+                        **settings):
+    labels = [f"{pop.label}\nN={len(data[pop.label]['mass'][co_type])}"
+              for pop in pops] if labels is None else labels
+    colours = [pop.colour for pop in pops] if colours is None else colours
+
+    if fig is None or ax is None:
+        fig, ax = plt.subplots()
+
+    for pop, colour in zip(pops, colours):
+        nice_transparent_hist(
+            ax=ax, data=data[pop.label]['mass'][co_type], bins=bins,
+            label=None, colour=colour,
+            density=density, lw=lw, alpha=alpha
+        )
+
+    ax.set(
+        xlabel=xlabel,
+        ylabel=ylabel,
+        **settings
+    )
+
+    ax.set(
+        xlabel=xlabel,
+        ylabel=ylabel,
+        **settings
+    )
+
+    # construct a legend with rectangles matching the histogram colors (lines have same colour, fill has
+    # the same alpha)
+    handles = [mpl.patches.Patch(edgecolor=colour, facecolor=mpl.colors.to_rgba(colour, alpha=alpha),
+                                 label=label, lw=lw) for colour, label in zip(colours, labels)]
+    leg = ax.legend(handles=handles, title=legend_title)
+    leg.get_title().set_multialignment('center')
 
     if show:
         plt.show()
@@ -280,7 +322,7 @@ def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
             loc = smooth_hist.max() if loc is None else loc
             ax.axvline(s, color=colour, ls='dotted', alpha=0.5)
             ax.annotate(f"{s * 1000:.0f} pc", xy=(s, loc), fontsize=0.6*fs,
-                        rotation=90, color=colour, ha='center', va='top', bbox=dict(boxstyle="round,pad=0.3",
+                        rotation=0, color=colour, ha='center', va='top', bbox=dict(boxstyle="round,pad=0.3",
                                                                                     fc="white", ec=colour))
 
         ax.set(
@@ -340,7 +382,7 @@ def plot_avg_mass_vs_z(mean_masses, labels, colours, z_maxes, z_range,
     if fig is None or ax is None:
         fig, ax = plt.subplots(figsize=(7, 7))
 
-    for mean_bh, label, c, z_max in zip(mean_masses, labels, colours, z_maxes ):
+    for mean_bh, label, c, z_max in zip(mean_masses, labels, colours, z_maxes):
         mask = z_range < z_max
         ax.plot(z_range[mask], mean_bh[mask], lw=2, label=label, color=c)
 
