@@ -313,7 +313,7 @@ def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
         if fig is None or ax is None:
             fig, ax = plt.subplots()
 
-        ax.plot(bin_centres, hist, label=label, color=colour)
+        ax.plot(bin_centres, hist, label=label, color=colour, lw=2)
 
         plot_func = exp_plus_sech2 if n_components == 2 else exponential
         ax.plot(bin_centres, plot_func(bin_centres, *popt), color=colour, ls='--', alpha=0.5)
