@@ -3,49 +3,36 @@ import gizmo_analysis as gizmo
 import numpy as np
 import argparse
 from os.path import join, isfile
+import astropy.units as u
+import astropy.constants as const
 
 
-def compute_half_mass_scales(pos, mass):
-    """Compute half-mass radius and half-mass height for a set of particles.
+def get_circularity(r, v, get_v_circ):
+    """Compute the circularity parameter for particles given their positions and velocities."""
+    R = np.sqrt(r[:, 0] ** 2 + r[:, 1] ** 2)
+    Lz = r[:, 0] * v[:, 1] - r[:, 1] * v[:, 0]
 
-    Parameters
-    ----------
-    pos : np.ndarray
-        Positions of particles (N, 3) in kpc.
-    mass : np.ndarray
-        Masses of particles (N,) in Msun.
+    vc = get_v_circ(R)
+    circularity = Lz / (R * vc)
 
-    Returns
-    -------
-    R_half : float
-        Half-mass radius in kpc.
-    z_half : float
-        Half-mass height in kpc.
-    """
-    R = np.sqrt(pos[:, 0]**2 + pos[:, 1]**2)
-    z = np.abs(pos[:, 2])
-
-    # only look at the central 50 kpc
-    dist = np.linalg.norm(pos, axis=1)
-    mask = dist < 50
-    R = R[mask]
-    z = z[mask]
-    mass = mass[mask]
-
-    # half mass radius
-    sorted_indices_R = np.argsort(R)
-    cum_mass_R = np.cumsum(mass[sorted_indices_R])
-    R_half = R[sorted_indices_R][np.searchsorted(cum_mass_R, cum_mass_R[-1] / 2)]
-
-    # half mass height
-    sorted_indices_z = np.argsort(z)
-    cum_mass_z = np.cumsum(mass[sorted_indices_z])
-    z_half = z[sorted_indices_z][np.searchsorted(cum_mass_z, cum_mass_z[-1] / 2)]
-
-    return R_half, z_half
+    return circularity
 
 
-def get_mass_growth(sim_dir, redshift, radii, out_dir, overwrite=False):
+def get_pos_vel_m(part, part_type, get_v_circ, circularity_thresh=0.5, dist_thresh=300.0):
+    """Get positions, velocities, and masses of particles of a given type that are likely part of the disk."""
+    pos = part[part_type].prop("host.distance.principal")
+    vel = part[part_type].prop("host.velocity.principal")
+    mass = np.array(part[part_type]["mass"])
+
+    d = np.linalg.norm(pos, axis=1)
+
+    circularity = get_circularity(pos, vel, get_v_circ)
+    mask = (circularity > circularity_thresh) & (d < dist_thresh)
+
+    return pos[mask], vel[mask], mass[mask]
+
+
+def get_mass_growth(sim_dir, redshift, radii, out_dir, overwrite=False, circularity_thresh=0.5):
     """Compute enclosed mass profiles at given redshift for a simulation.
 
     Parameters
@@ -60,6 +47,8 @@ def get_mass_growth(sim_dir, redshift, radii, out_dir, overwrite=False):
         Directory to save output plots.
     overwrite : bool, optional
         Whether to overwrite existing output files. Default is False.
+    circularity_thresh : float, optional
+        Threshold for circularity to identify disk particles. Default is 0.5.
     """
     out_file = join(out_dir, f"z_{redshift:.2f}.npz")
 
@@ -76,27 +65,47 @@ def get_mass_growth(sim_dir, redshift, radii, out_dir, overwrite=False):
     )
     print(f"Read {len(part['dark'])} dark matter particles at z={redshift}")
 
+    all_pos = np.concatenate([part["star"].prop("host.distance.principal"),
+                              part["dark"].prop("host.distance.principal"),
+                              part["gas"].prop("host.distance.principal")])
+    all_mass = np.concatenate([part["star"]["mass"], part["dark"]["mass"], part["gas"]["mass"]])
+    all_R = (all_pos[:, 0]**2 + all_pos[:, 1]**2)**0.5
+
+    sort_idx = np.argsort(all_R)
+    r_sorted = all_R[sort_idx]
+    m_sorted = all_mass[sort_idx]
+
+    m_enc = np.cumsum(m_sorted)
+
+    R_grid = np.linspace(1e-5, 100.0, 5000)
+    indices = np.searchsorted(r_sorted, R_grid, side="right") - 1
+    indices = np.clip(indices, 0, len(m_enc) - 1)
+
+    M_grid = m_enc[indices]
+
+    v_circ = np.sqrt(const.G * M_grid * u.Msun / (R_grid * u.kpc)).to(u.km / u.s).value
+
+    get_v_circ_interp = lambda r: np.interp(r, R_grid, v_circ)
+
+    print(f"Computed circular velocity profile at z={redshift}")
+
+    dm_pos, dm_vel, dm_mass = get_pos_vel_m(part, "dark", get_v_circ_interp,
+                                            circularity_thresh=circularity_thresh)
+
     # calculate the enclosed mass profiles for dark matter, then stars+gas
-    dm_pos = part["dark"].prop("host.distance.principal")  # (N, 3) in kpc
-    dm_mass = np.array(part["dark"]["mass"])  # (N_dm,) in Msun
-    dm_r = np.linalg.norm(dm_pos, axis=1)  # physical radius in kpc
+    dm_r = np.linalg.norm(dm_pos, axis=1)
     dm_M_enc = np.array([dm_mass[dm_r < rr].sum() for rr in radii])
 
-    baryon_pos = np.vstack(
-        (
-            part["star"].prop("host.distance.principal"),
-            part["gas"].prop("host.distance.principal"),
-        )
-    )  # (N_star + N_gas, 3) in kpc
-    baryon_mass = np.hstack(
-        (np.array(part["star"]["mass"]), np.array(part["gas"]["mass"]))
-    )  # (N_star + N_gas,) in Msun
+    star_pos, star_vel, star_mass = get_pos_vel_m(part, "star", get_v_circ_interp,
+                                                  circularity_thresh=circularity_thresh)
+    gas_pos, gas_vel, gas_mass = get_pos_vel_m(part, "gas", get_v_circ_interp,
+                                               circularity_thresh=circularity_thresh)
+
+    baryon_pos = np.vstack((star_pos, gas_pos))  # (N_star + N_gas, 3) in kpc
+    baryon_mass = np.hstack((np.array(star_mass), np.array(gas_mass)))  # (N_star + N_gas,) in Msun
     baryon_r = np.linalg.norm(baryon_pos, axis=1)  # physical radius in kpc
     baryon_M_enc = np.array([baryon_mass[baryon_r < rr].sum() for rr in radii])
     print(f"Computed enclosed mass profile at z={redshift}")
-
-    star_pos = part["star"].prop("host.distance.principal")
-    star_mass = np.array(part["star"]["mass"])
 
     R = np.sqrt(star_pos[:, 0]**2 + star_pos[:, 1]**2)
     z = star_pos[:, 2]
@@ -143,7 +152,13 @@ if __name__ == "__main__":
         action="store_true",
         help="Whether to overwrite existing output files.",
     )
+    parser.add_argument(
+        "--circularity-thresh",
+        type=float,
+        help="Threshold for circularity to identify disk particles.",
+    )
 
     args = parser.parse_args()
 
-    get_mass_growth(args.sim_dir, args.redshift, args.radii, args.out_dir, args.overwrite)
+    get_mass_growth(args.sim_dir, args.redshift, args.radii, args.out_dir,
+                    args.overwrite, args.circularity_thresh)
