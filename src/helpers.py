@@ -234,7 +234,7 @@ class DummyPop:
         self.colour = colour
 
 
-def load_postprocessed_data(files, labels):
+def load_postprocessed_data(files, labels, folder="/mnt/ceph/users/twagg/underworld/postprocessed"):
     """Load the post-processed data from an HDF5 file.
 
     Parameters
@@ -250,7 +250,8 @@ def load_postprocessed_data(files, labels):
     data_dict = {}
     for file, label in zip(files, labels):
         data = {}
-        with h5.File(f"{file}_processed.h5", "r") as f:
+        path = join(folder, f"{file}_processed.h5")
+        with h5.File(path, "r") as f:
             data["mass_binaries"] = f.attrs["mass_binaries"]
             data["mass_singles"] = f.attrs["mass_singles"]
             for key in f["BH"].keys():
@@ -262,7 +263,7 @@ def load_postprocessed_data(files, labels):
     return data_dict
 
 
-def load_postprocessed_pops(files, labels, colours):
+def load_postprocessed_pops(files, labels, colours, folder="/mnt/ceph/users/twagg/underworld/postprocessed"):
     pops = [DummyPop(label, colour) for label, colour in zip(labels, colours)]
-    data = load_postprocessed_data(files, labels)
+    data = load_postprocessed_data(files, labels, folder=folder)
     return pops, data
