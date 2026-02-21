@@ -8,8 +8,9 @@ import time
 
 
 def vary_the_underworld(output_dir, processes, simulation_name, file_suffix,
-                        params_to_vary={}, reset_kicks=False,
-                        template_path="/mnt/ceph/users/twagg/underworld/template/"):
+                        params_to_vary={}, reset_kicks=True,
+                        template_path="/mnt/ceph/users/twagg/underworld/template/",
+                        run_as_singles=False):
     """
     Run Underworld simulation with cogsworth.
 
@@ -27,6 +28,8 @@ def vary_the_underworld(output_dir, processes, simulation_name, file_suffix,
         Whether to reset supernova kicks to default values.
     template_path : str
         Path to the template population files folder.
+    run_as_singles : bool
+        Whether to treat all binaries as singles by giving them a very large initial separation.
     """
     # quickly check if output directory exists
     if not exists(output_dir):
@@ -76,6 +79,10 @@ def vary_the_underworld(output_dir, processes, simulation_name, file_suffix,
 
     initial_pop.processes = processes
     initial_pop.galactic_potential = gp.MilkyWayPotential(version='v2')
+
+    if run_as_singles:
+        # give each binary an extremely large initial separation to ensure they are treated as singles
+        initial_pop.initC['porb'] = 1e20
 
     # perform stellar evolution for binaries
     start = time.time()
@@ -149,6 +156,13 @@ def main():
         help='Parameters to vary in the initial conditions as key:value pairs (e.g., --vary-params param1:val1 param2:val2)'
     )
 
+    parser.add_argument(
+        '--run-as-singles',
+        action='store_true',
+        help='Treat all binaries as singles by giving them a very large initial separation (default: False)',
+        default=False
+    )
+
     args = parser.parse_args()
 
     params_to_vary = {}
@@ -171,7 +185,8 @@ def main():
         simulation_name=args.simulation_name,
         file_suffix=args.file_suffix,
         params_to_vary=params_to_vary,
-        reset_kicks=args.reset_kicks
+        reset_kicks=args.reset_kicks,
+        run_as_singles=args.run_as_singles,
     )
 
 
