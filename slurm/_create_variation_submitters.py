@@ -2,7 +2,7 @@ from copy import copy
 
 TEMPLATE = """#!/bin/bash
 ## Job Name
-#SBATCH --job-name=underworld
+#SBATCH --job-name=uw-SIMNAMEREPLACE
 #SBATCH --partition=cca
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=64

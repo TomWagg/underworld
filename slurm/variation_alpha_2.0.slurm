@@ -1,6 +1,6 @@
 #!/bin/bash
 ## Job Name
-#SBATCH --job-name=underworld
+#SBATCH --job-name=uw-alpha_2.0
 #SBATCH --partition=cca
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=64

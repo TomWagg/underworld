@@ -1,6 +1,6 @@
 #!/bin/bash
 ## Job Name
-#SBATCH --job-name=underworld
+#SBATCH --job-name=uw-maltsev_fallback_0.0
 #SBATCH --partition=cca
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=64

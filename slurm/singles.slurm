@@ -1,12 +1,12 @@
 #!/bin/bash
 ## Job Name
-#SBATCH --job-name=uw-alpha_0.1
+#SBATCH --job-name=uw-singles
 #SBATCH --partition=cca
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=64
 #SBATCH --time=0:30:00
-#SBATCH -o /mnt/home/twagg/projects/underworld/logs/logs_alpha_0.1_%a_%A.out
-#SBATCH -e /mnt/home/twagg/projects/underworld/logs/logs_alpha_0.1_%a_%A.err
+#SBATCH -o /mnt/home/twagg/projects/underworld/logs/logs_singles_%a_%A.out
+#SBATCH -e /mnt/home/twagg/projects/underworld/logs/logs_singles_%a_%A.err
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=twagg@flatironinstitute.org
 #SBATCH --export=all
@@ -17,17 +17,17 @@ conda activate cogsworth
 # determine the file suffix based on SLURM_ARRAY_TASK_ID
 file_suffix="_part${SLURM_ARRAY_TASK_ID}"
 
-echo "Starting alpha_0.1 underworld simulation with file suffix: ${file_suffix}"
+echo "Starting singles underworld simulation with file suffix: ${file_suffix}"
 
-if [ -f "/mnt/ceph/users/twagg/underworld/alpha_0.1/alpha_0.1${file_suffix}.h5" ]; then
-    echo "File /mnt/ceph/users/twagg/underworld/alpha_0.1/alpha_0.1${file_suffix}.h5 already exists, skipping..."
+if [ -f "/mnt/ceph/users/twagg/underworld/singles/singles${file_suffix}.h5" ]; then
+    echo "File /mnt/ceph/users/twagg/underworld/singles/singles${file_suffix}.h5 already exists, skipping..."
 else
     # run the distributed underworld simulation
     python /mnt/home/twagg/projects/underworld/simulations/underworld_from_template.py \
         -o /mnt/ceph/users/twagg/underworld/ \
         -p 64 \
-        -s "alpha_0.1" \
+        -s "singles" \
         -f "${file_suffix}" \
-        --vary-params alpha1:0.1 \
-        --reset-kicks
+        --reset-kicks \
+        --run-as-singles
 fi
