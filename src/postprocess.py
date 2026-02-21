@@ -2,14 +2,13 @@ import helpers
 import os
 import numpy as np
 
-files = ['fiducial', 'beta_0.0', 'beta_1.0',
-         'alpha_0.5', 'alpha_2.0', 'alpha_10.0',
-         'qcrit_caseB_1000',
+files = ['fiducial', 'beta_0.0', 'beta_0.5', 'beta_1.0',
+         'alpha_0.1', 'alpha_0.5', 'alpha_2.0', 'alpha_10.0',
+         'qcrit_caseB_0.001', 'qcrit_caseB_1000',
          'fryer_rapid', 'mandel_muller', 'maltsev_fallback_0.0', 'maltsev_fallback_0.25',
          'maltsev_fallback_0.5', 'maltsev_fallback_0.75', 'maltsev_fallback_1.0',
          'maltsev_pf_prob_0.0', 'maltsev_pf_prob_1.0',
          'bhflag_3', 'kickflag_1']
-deleted = ['alpha_0.1', 'beta_0.5', 'qcrit_caseB_0.001']
 
 BASE_PATH = "/mnt/ceph/users/twagg/underworld/"
 postprocess_folder = os.path.join(BASE_PATH, "postprocessed")
