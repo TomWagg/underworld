@@ -223,17 +223,11 @@ def plot_mass_histogram(pops, data, bins, co_type, xlabel, ylabel, density=True,
         **settings
     )
 
-    ax.set(
-        xlabel=xlabel,
-        ylabel=ylabel,
-        **settings
-    )
-
     # construct a legend with rectangles matching the histogram colors (lines have same colour, fill has
     # the same alpha)
     handles = [mpl.patches.Patch(edgecolor=colour, facecolor=mpl.colors.to_rgba(colour, alpha=alpha),
                                  label=label, lw=lw) for colour, label in zip(colours, labels)]
-    leg = ax.legend(handles=handles, title=legend_title)
+    leg = ax.legend(handles=handles, title=legend_title, frameon=False)
     leg.get_title().set_multialignment('center')
 
     if show:
@@ -376,7 +370,7 @@ def absolute_galactocentric_height(pops, kinematics, co_type="CO", fig=None, axe
 
 
 def plot_avg_mass_vs_z(mean_masses, labels, colours, z_maxes, z_range,
-                       fig=None, ax=None, show=True, save=None):
+                       fig=None, ax=None, show=True, save=None, legend_kwargs={}, ax_kwargs={}):
     # plot the average mass as a function of |z|
     if fig is None or ax is None:
         fig, ax = plt.subplots(figsize=(7, 7))
@@ -391,12 +385,16 @@ def plot_avg_mass_vs_z(mean_masses, labels, colours, z_maxes, z_range,
         xscale="log",
         xlabel=r'Distance from Galactic plane, $|z|$ [kpc]',
         ylabel='Average BH Mass [M$_\odot$]',
-        xlim=(z_range.min(), z_range.max())
+        xlim=(z_range.min(), z_range.max()),
+        **ax_kwargs
     )
 
     ax.set_xlabel(ax.get_xlabel(), fontsize=0.9*fs)
 
-    ax.legend(title="BHs", fontsize=0.7*fs, title_fontsize=0.7*fs)
+    ax.legend(title=legend_kwargs.pop('title', "BHs"),
+              fontsize=legend_kwargs.pop('fontsize', 0.7*fs),
+              title_fontsize=legend_kwargs.pop('title_fontsize', 0.7*fs),
+              **legend_kwargs)
 
     ax.yaxis.set_minor_locator(mpl.ticker.MultipleLocator(0.25))
 
