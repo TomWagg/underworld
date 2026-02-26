@@ -62,6 +62,7 @@ for val in [0.0, 1.0]:
 
 
 # kick variations
+variations.append({"name": "bhflag_0", "params": "bhflag:0"})
 variations.append({"name": "bhflag_3", "params": "bhflag:3"})
 variations.append({"name": "kickflag_1", "params": "kickflag:1"})
 
