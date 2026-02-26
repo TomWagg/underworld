@@ -192,7 +192,7 @@ def get_underworld_binaries(pops, verbose=False):
     return underworld_binaries
 
 
-def save_postprocessed_data(pops, files, kinematics, masses, bin_nums):
+def save_postprocessed_data(pops, files, kinematics, masses, bin_nums, sep, primary):
     """Save the post-processed data to an HDF5 file.
 
     Parameters
@@ -207,6 +207,10 @@ def save_postprocessed_data(pops, files, kinematics, masses, bin_nums):
         Dictionary containing the mass data for each population and component.
     bin_nums : dict
         Dictionary containing the binary numbers for each population and component.
+    sep : dict
+        Dictionary containing the separations for each population and component.
+    primary : dict
+        Dictionary containing a mask of whether the CO is the primary in its binary
     """
     for pop, file in zip(pops, files):
         with h5.File(file, "w") as f:
@@ -226,6 +230,8 @@ def save_postprocessed_data(pops, files, kinematics, masses, bin_nums):
                     f"{comp}/init_z",
                     data=pop.initial_galaxy.z[np.searchsorted(pop.bin_nums, bin_nums[pop.label][comp])]
                 )
+                f.create_dataset(f"{comp}/sep", data=sep[pop.label][comp])
+                f.create_dataset(f"{comp}/primary", data=primary[pop.label][comp])
 
 
 class DummyPop:
@@ -259,6 +265,8 @@ def load_postprocessed_data(files, labels, folder="/mnt/ceph/users/twagg/underwo
                 for comp in ["NS", "BH"]:
                     data[key][comp] = f[f"{comp}/{key}"][:]
                 data[key]["CO"] = np.concatenate((data[key]["NS"], data[key]["BH"]))
+        data["n_BH"] = len(data["mass"]["BH"])
+        data["n_NS"] = len(data["mass"]["NS"])
         data_dict[label] = data
     return data_dict
 
