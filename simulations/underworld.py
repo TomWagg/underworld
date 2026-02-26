@@ -3,6 +3,7 @@ import gala.potential as gp
 import argparse
 from os.path import join, exists
 import pathlib
+import astropy.units as u
 
 import time
 
@@ -55,7 +56,8 @@ def enter_the_underworld(n_binaries, output_dir, processes, simulation_name, fil
         },
         bpp_columns=bpp_columns,
         store_entire_orbits=False,
-        error_file_path=None
+        error_file_path=None,
+        v_dispersion=0 * u.km / u.s,
     )
     initial_pop.BSE_settings["binfrac"] = 1.0
 
