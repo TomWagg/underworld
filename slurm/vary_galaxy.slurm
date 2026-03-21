@@ -5,8 +5,8 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=64
 #SBATCH --time=0:10:00
-#SBATCH -o /mnt/home/twagg/projects/underworld/logs/logs_%a_%A.out
-#SBATCH -e /mnt/home/twagg/projects/underworld/logs/logs_%a_%A.err
+#SBATCH -o /mnt/home/twagg/projects/underworld/logs/logs_time-evolving-pot_%a_%A.out
+#SBATCH -e /mnt/home/twagg/projects/underworld/logs/logs_time-evolving-pot_%a_%A.err
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=twagg@flatironinstitute.org
 #SBATCH --export=all
@@ -21,7 +21,7 @@ echo "Starting underworld simulation with file suffix: ${file_suffix}, varying t
 
 # run the distributed underworld simulation
 python /mnt/home/twagg/projects/underworld/simulations/distributed_underworld_diff_pot.py \
-    -o /mnt/ceph/users/twagg/underworld/ \
+    -o /mnt/ceph/users/twagg/underworld/time-evolving-pot \
     -p 64 \
     -s time-evolving-pot \
     -f "${file_suffix}"

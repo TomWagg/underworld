@@ -112,8 +112,6 @@ def plot_side_on_density(xs, zs, labels, xlim=20, zlim=12, n_bins=200, sigma=1.0
                 'vmax': upper_lim / 2
             }
 
-        print(kwargs)
-
         im = ax.imshow(
             smoothed_hist.T,
             origin='lower',
@@ -149,8 +147,8 @@ def plot_side_on_density(xs, zs, labels, xlim=20, zlim=12, n_bins=200, sigma=1.0
     ax.set(
         xlim=(-xlim, xlim),
         ylim=(-zlim, zlim),
-        xlabel='x [kpc]',
-        ylabel='z [kpc]',
+        xlabel=r'Galactocentric $x$ [kpc]',
+        ylabel=r'Galactocentric $z$ [kpc]',
     )
     ax.set_facecolor('black')
 
@@ -253,8 +251,8 @@ def exp_plus_sech2(x, a, w, b1, b2):
 def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
                           plot=False, fig=None, ax=None, show=True,
                           label="", colour="black", n_components=1,
-                          scale_height_loc=None,
-                          R=None, Rlims=(7.5, 8.5),
+                          scale_height_loc=None, zorder=None,
+                          R=None, Rlims=(7.5, 8.5), verbose=False,
                           **kwargs):
     """Estimate the scale height of a distribution given z-positions."""
     z = np.abs(z)
@@ -262,9 +260,11 @@ def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
     if R is not None:
         R = R.to(u.kpc).value if hasattr(R, 'unit') else R
         mask = (R >= Rlims[0]) & (R < Rlims[1])
-        print(len(z), "objects before Rlims")
+        if verbose:
+            print(len(z), "objects before Rlims")
         z = z[mask]
-        print(len(z), "objects in Rlims")
+        if verbose:
+            print(len(z), "objects in Rlims")
 
     # remove units for calculation if they exist
     if hasattr(z, 'unit'):
@@ -279,7 +279,7 @@ def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
 
     smooth_hist = gaussian_filter(hist, sigma=0.5)
 
-    z_range = np.linspace(0, bin_edges.max(), 1000)
+    z_range = np.linspace(0, bin_edges.max(), 50000)
 
     if n_components == 1:
         p0 = [smooth_hist.max(), 1 / scale_height]
@@ -307,16 +307,16 @@ def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
         if fig is None or ax is None:
             fig, ax = plt.subplots()
 
-        ax.plot(bin_centres, hist, label=label, color=colour, lw=2)
+        ax.plot(bin_centres, hist, label=label, color=colour, lw=2, zorder=zorder)
 
         plot_func = exp_plus_sech2 if n_components == 2 else exponential
-        ax.plot(bin_centres, plot_func(bin_centres, *popt), color=colour, ls='--', alpha=0.5)
+        ax.plot(bin_centres, plot_func(bin_centres, *popt), color=colour, ls='--', alpha=0.5, zorder=zorder)
 
         loc = smooth_hist.max() if scale_height_loc is None else scale_height_loc
-        ax.axvline(scale_height, color=colour, ls='dotted', alpha=0.5)
-        ax.annotate(f"{scale_height * 1000:.0f} pc", xy=(scale_height, loc), fontsize=0.6*fs,
-                    rotation=0, color=colour, ha='center', va='top', bbox=dict(boxstyle="round,pad=0.3",
-                                                                                fc="white", ec=colour))
+        ax.axvline(scale_height, color=colour, ls='dotted', alpha=0.5, zorder=zorder)
+        ax.annotate(f"{scale_height * 1000:.0f} pc", xy=(scale_height, loc), fontsize=0.7*fs,
+                    rotation=0, color=colour, ha='center', va='top',
+                    bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=colour), zorder=1000)
 
         ax.set(
             xlabel="Distance from the Galactic plane, |z| (kpc)",
@@ -391,7 +391,7 @@ def plot_avg_mass_vs_z(mean_masses, labels, colours, z_maxes, z_range,
 
     ax.set_xlabel(ax.get_xlabel(), fontsize=0.9*fs)
 
-    ax.legend(title=legend_kwargs.pop('title', "BHs"),
+    ax.legend(title=legend_kwargs.pop('title', "Black holes"),
               fontsize=legend_kwargs.pop('fontsize', 0.7*fs),
               title_fontsize=legend_kwargs.pop('title_fontsize', 0.7*fs),
               **legend_kwargs)

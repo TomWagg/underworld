@@ -35,14 +35,14 @@ def evolve_the_galaxy(output_dir, processes, simulation_name, file_suffix):
     time_knots = np.linspace(0, 12, 20) * u.Gyr
 
     # use y = mx + c
-    # t < 3.5 Gyr: linear from (0, 0.45) to (3.5, 0.88)
-    # t >= 3.5 Gyr: linear from (3.5, 0.88) to (12, 1.0)
+    # t < 3 Gyr: linear from (0, 0.45) to (3, 0.88)
+    # t >= 3 Gyr: linear from (3, 0.88) to (12, 1.0)
     mass_at_knot = np.zeros_like(time_knots.value) * u.Msun
     for i, t in enumerate(time_knots.value):
-        if t < 3.5:
-            mass_at_knot[i] = (0.45 + (0.88 - 0.45) / 3.5 * t) * u.Msun
+        if t < 3:
+            mass_at_knot[i] = (0.45 + (0.88 - 0.45) / 3 * t) * u.Msun
         else:
-            mass_at_knot[i] = (0.88 + (1.0 - 0.88) / (12 - 3.5) * (t - 3.5)) * u.Msun
+            mass_at_knot[i] = (0.88 + (1.0 - 0.88) / (12 - 3) * (t - 3)) * u.Msun
     mass_at_knot *= 5.54e11
 
     evolving_mw_pot = gp.CCompositePotential(
@@ -76,7 +76,7 @@ def evolve_the_galaxy(output_dir, processes, simulation_name, file_suffix):
     # read the template population
     print("Reading the template population")
     start = time.time()
-    underworld = cogsworth.pop.load(join(output_dir, f"qcflag-5/qcflag-5{file_suffix}"))
+    underworld = cogsworth.pop.load(join(output_dir, f"fiducial/fiducial{file_suffix}"))
     print(f"   Loaded template population in {time.time() - start:1.2f} seconds")
 
     underworld.processes = processes

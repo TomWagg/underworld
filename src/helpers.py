@@ -66,14 +66,13 @@ def get_kinematics(pops):
 
     for pop in pops:
         kinematics[pop.label] = {}
-        primary_pos = pop.final_pos[:len(pop)]
         secondary_pos = pop.final_pos[:len(pop)].copy()
         secondary_pos[pop.disrupted] = pop.final_pos[len(pop):]
 
-        ns_pos = np.concatenate((primary_pos[pop.final_bpp["kstar_1"] == 13],
-                                secondary_pos[pop.final_bpp["kstar_2"] == 13]))
-        bh_pos = np.concatenate((primary_pos[pop.final_bpp["kstar_1"] == 14],
-                                secondary_pos[pop.final_bpp["kstar_2"] == 14]))
+        ns_pos = np.concatenate((pop.final_primary_pos[pop.final_bpp["kstar_1"] == 13],
+                                pop.final_secondary_pos[pop.final_bpp["kstar_2"] == 13]))
+        bh_pos = np.concatenate((pop.final_primary_pos[pop.final_bpp["kstar_1"] == 14],
+                                 pop.final_secondary_pos[pop.final_bpp["kstar_2"] == 14]))
         co_pos = np.concatenate((ns_pos, bh_pos))
 
         kinematics[pop.label]["pos"] = {
@@ -192,7 +191,7 @@ def get_underworld_binaries(pops, verbose=False):
     return underworld_binaries
 
 
-def save_postprocessed_data(pops, files, kinematics, masses, bin_nums, sep, primary):
+def save_postprocessed_data(pops, files, kinematics, masses, bin_nums, sep, primary, companion):
     """Save the post-processed data to an HDF5 file.
 
     Parameters
@@ -211,6 +210,8 @@ def save_postprocessed_data(pops, files, kinematics, masses, bin_nums, sep, prim
         Dictionary containing the separations for each population and component.
     primary : dict
         Dictionary containing a mask of whether the CO is the primary in its binary
+    companion : dict
+        Dictionary containing the companion type for each CO
     """
     for pop, file in zip(pops, files):
         with h5.File(file, "w") as f:
@@ -232,6 +233,7 @@ def save_postprocessed_data(pops, files, kinematics, masses, bin_nums, sep, prim
                 )
                 f.create_dataset(f"{comp}/sep", data=sep[pop.label][comp])
                 f.create_dataset(f"{comp}/primary", data=primary[pop.label][comp])
+                f.create_dataset(f"{comp}/companion", data=companion[pop.label][comp])
 
 
 class DummyPop:
