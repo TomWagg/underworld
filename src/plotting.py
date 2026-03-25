@@ -312,11 +312,12 @@ def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
         plot_func = exp_plus_sech2 if n_components == 2 else exponential
         ax.plot(bin_centres, plot_func(bin_centres, *popt), color=colour, ls='--', alpha=0.5, zorder=zorder)
 
-        loc = smooth_hist.max() if scale_height_loc is None else scale_height_loc
-        ax.axvline(scale_height, color=colour, ls='dotted', alpha=0.5, zorder=zorder)
-        ax.annotate(f"{scale_height * 1000:.0f} pc", xy=(scale_height, loc), fontsize=0.7*fs,
-                    rotation=0, color=colour, ha='center', va='top',
-                    bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=colour), zorder=1000)
+        if scale_height_loc is not None:
+            loc = smooth_hist.max() if scale_height_loc is None else scale_height_loc
+            ax.axvline(scale_height, color=colour, ls='dotted', alpha=0.5, zorder=zorder)
+            ax.annotate(f"{scale_height * 1000:.0f} pc", xy=(scale_height, loc), fontsize=0.7*fs,
+                        rotation=0, color=colour, ha='center', va='top',
+                        bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=colour), zorder=1000)
 
         ax.set(
             xlabel="Distance from the Galactic plane, |z| (kpc)",
@@ -339,7 +340,7 @@ def absolute_galactocentric_height(pops, kinematics, co_type="CO", fig=None, axe
         fig, axes = plt.subplots(1, 2, figsize=(20, 6))
 
     scales = ['linear', 'log']
-    bin_list = [np.linspace(0, 10, 501), np.geomspace(8e-4, 3e4, 120)]
+    bin_list = [np.linspace(0, 10, 501), np.geomspace(8e-4, 4e4, 120)]
     labels = ['Inner 10 kpc', 'Full population']
 
     for ax, scale, bins, label in zip(axes, scales, bin_list, labels):

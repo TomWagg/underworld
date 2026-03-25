@@ -1,6 +1,6 @@
 #!/bin/bash
 ## Job Name
-#SBATCH --job-name=underworld
+#SBATCH --job-name=uw-tep
 #SBATCH --partition=cca
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=64
@@ -21,7 +21,7 @@ echo "Starting underworld simulation with file suffix: ${file_suffix}, varying t
 
 # run the distributed underworld simulation
 python /mnt/home/twagg/projects/underworld/simulations/distributed_underworld_diff_pot.py \
-    -o /mnt/ceph/users/twagg/underworld/time-evolving-pot \
+    -o /mnt/ceph/users/twagg/underworld/ \
     -p 64 \
     -s time-evolving-pot \
     -f "${file_suffix}"

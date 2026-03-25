@@ -1,13 +1,12 @@
 import helpers
 import os
 import numpy as np
-import time
+from time import time
 
 do_now = [
-    'fiducial_m2min'
+    'time-evolving-pot'
 ]
 do_later = [
-    'time-evolving-pot'
 ]
 done = [
     'fiducial', 'singles', 'bhflag_0', 'bhflag_3', 'fryer_rapid', 'kickflag_1', 'mandel_muller',
@@ -16,6 +15,7 @@ done = [
     'beta_0.0', 'beta_0.5', 'beta_1.0',
     'alpha_0.1', 'alpha_0.5', 'alpha_2.0', 'alpha_10.0',
     'qcrit_caseB_0.001', 'qcrit_caseB_1000',
+    'fiducial_m2min'
 ]
 
 files = do_now

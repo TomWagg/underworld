@@ -1,9 +1,8 @@
 import cogsworth
-import gala.potential as gp
 import argparse
 from os.path import join, exists
-import numpy as np
-import astropy.units as u
+import evolving_potential
+import pathlib
 
 import time
 
@@ -25,6 +24,10 @@ def evolve_the_galaxy(output_dir, processes, simulation_name, file_suffix):
     if not exists(output_dir):
         raise ValueError(f"Output directory {output_dir} does not exist!")
 
+    simulation_folder = join(output_dir, simulation_name)
+    if not exists(simulation_folder):
+        pathlib.Path(simulation_folder).mkdir(parents=True, exist_ok=True)
+
     print("Starting Underworld simulation with these parameters:")
     print(f"   Output directory: {output_dir}")
     print(f"   Number of processes: {processes}")
@@ -32,44 +35,7 @@ def evolve_the_galaxy(output_dir, processes, simulation_name, file_suffix):
     print(f"   File suffix: {file_suffix}")
     print("       EVOLVING the potential")
 
-    time_knots = np.linspace(0, 12, 20) * u.Gyr
-
-    # use y = mx + c
-    # t < 3 Gyr: linear from (0, 0.45) to (3, 0.88)
-    # t >= 3 Gyr: linear from (3, 0.88) to (12, 1.0)
-    mass_at_knot = np.zeros_like(time_knots.value) * u.Msun
-    for i, t in enumerate(time_knots.value):
-        if t < 3:
-            mass_at_knot[i] = (0.45 + (0.88 - 0.45) / 3 * t) * u.Msun
-        else:
-            mass_at_knot[i] = (0.88 + (1.0 - 0.88) / (12 - 3) * (t - 3)) * u.Msun
-    mass_at_knot *= 5.54e11
-
-    evolving_mw_pot = gp.CCompositePotential(
-        disk=gp.MN3ExponentialDiskPotential(
-            m=4.77e10 * u.Msun,
-            h_R=2.6 * u.kpc,
-            h_z=0.3 * u.kpc,
-            units="galactic"
-        ),
-        bulge=gp.HernquistPotential(
-            m=5e9 * u.Msun,
-            c=1.0 * u.kpc,
-            units="galactic"
-        ),
-        nucleus=gp.HernquistPotential(
-            m=1.81e9 * u.Msun,
-            c=0.07 * u.kpc,
-            units="galactic"
-        ),
-        halo=gp.TimeInterpolatedPotential(
-            gp.NFWPotential,
-            time_knots,
-            m=mass_at_knot,
-            r_s=15.63 * u.kpc,
-            units="galactic"
-        )
-    )
+    evolving_mw_pot = evolving_potential.get_milky_way_potential(evolve_dm=True, evolve_disk=True)
 
     very_start = time.time()
 
@@ -88,7 +54,7 @@ def evolve_the_galaxy(output_dir, processes, simulation_name, file_suffix):
     print(f"   Performed galactic evolution in {time.time() - start:1.2f} seconds")
 
     start = time.time()
-    underworld.save(join(output_dir, f"{simulation_name}{file_suffix}"), overwrite=True)
+    underworld.save(join(simulation_folder, f"{simulation_name}{file_suffix}"), overwrite=True)
     print(f"   Saved underworld population in {time.time() - start:1.2f} seconds")
 
     print(f"   Number of underworld binaries: {len(underworld)}")
