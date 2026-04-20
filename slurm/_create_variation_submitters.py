@@ -39,32 +39,34 @@ variations = []
 
 # mt physics variations
 for val in [0.0, 0.5, 1.0]:
-    variations.append({"name": f"beta_{val}", "params": f"beta:{val}"})
+    variations.append({"name": f"beta_{val}", "params": f"beta:{val}", "type": "mt"})
 for val in [0.1, 0.5, 2.0, 10.0]:
-    variations.append({"name": f"alpha_{val}", "params": f"alpha1:{val}"})
+    variations.append({"name": f"alpha_{val}", "params": f"alpha1:{val}", "type": "mt"})
 for val in [0.001, 1000]:
-    variations.append({"name": f"qcrit_caseB_{val}", "params": f"qcrit_2:{val}"})
+    variations.append({"name": f"qcrit_caseB_{val}", "params": f"qcrit_2:{val}", "type": "mt"})
 
 # remnant mass variations
-variations.append({"name": "fryer_rapid", "params": "remnantflag:3"})
-variations.append({"name": "mandel_muller", "params": "remnantflag:5 kickflag:6 mxns:2 rembar_massloss:0.1"})
+variations.append({"name": "fryer_rapid", "params": "remnantflag:3", "type": "main"})
+variations.append({"name": "mandel_muller", "params": "remnantflag:5 kickflag:6 mxns:2 rembar_massloss:0.1", "type": "main"})
 
 for val in [0.0, 0.25, 0.50, 0.75, 1.0]:
     variations.append({
         "name": f"maltsev_fallback_{val}",
-        "params": f"remnantflag:6 maltsev_mode:0 maltsev_fallback:{val} maltsev_pf_prob:0.1"
+        "params": f"remnantflag:6 maltsev_mode:0 maltsev_fallback:{val} maltsev_pf_prob:0.1",
+        "type": "main"
     })
 for val in [0.0, 1.0]:
     variations.append({
         "name": f"maltsev_pf_prob_{val}",
-        "params": f"remnantflag:6 maltsev_mode:0 maltsev_fallback:0.5 maltsev_pf_prob:{val}"
+        "params": f"remnantflag:6 maltsev_mode:0 maltsev_fallback:0.5 maltsev_pf_prob:{val}",
+        "type": "main"
     })
 
 
 # kick variations
-variations.append({"name": "bhflag_0", "params": "bhflag:0"})
-variations.append({"name": "bhflag_3", "params": "bhflag:3"})
-variations.append({"name": "kickflag_1", "params": "kickflag:1"})
+variations.append({"name": "bhflag_0", "params": "bhflag:0", "type": "main"})
+variations.append({"name": "bhflag_3", "params": "bhflag:3", "type": "main"})
+variations.append({"name": "kickflag_1", "params": "kickflag:1", "type": "main"})
 
 files = []
 
@@ -73,7 +75,7 @@ for variation in variations:
     submitter_script = submitter_script.replace("SIMNAMEREPLACE", variation["name"])
     submitter_script = submitter_script.replace("PARAMSREPLACE", variation["params"])
 
-    with open(f"variation_{variation['name']}.slurm", "w") as f:
+    with open(f"variation_{variation['type']}_{variation['name']}.slurm", "w") as f:
         f.write(submitter_script)
 
     files.append(variation["name"])
