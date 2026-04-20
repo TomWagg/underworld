@@ -191,6 +191,64 @@ def get_underworld_binaries(pops, verbose=False):
     return underworld_binaries
 
 
+def postprocess_populations(*pops):
+    kinematics = get_kinematics(pops)
+    bin_nums = get_shaped_bin_nums(pops)
+
+    masses = {}
+    sep = {}
+    primary = {}
+    companion = {}
+    for pop in pops:
+        primary_bh = pop.final_bpp["kstar_1"] == 14
+        secondary_bh = pop.final_bpp["kstar_2"] == 14
+        primary_ns = pop.final_bpp["kstar_1"] == 13
+        secondary_ns = pop.final_bpp["kstar_2"] == 13
+
+        final_bpp_primary_bh = pop.final_bpp[primary_bh]
+        final_bpp_secondary_bh = pop.final_bpp[secondary_bh]
+        final_bpp_primary_ns = pop.final_bpp[primary_ns]
+        final_bpp_secondary_ns = pop.final_bpp[secondary_ns]
+
+        masses[pop.label] = {
+            "BH": np.concatenate((final_bpp_primary_bh["mass_1"], final_bpp_secondary_bh["mass_2"])),
+            "NS": np.concatenate((final_bpp_primary_ns["mass_1"], final_bpp_secondary_ns["mass_2"]))
+        }
+        masses[pop.label]["CO"] = np.concatenate((masses[pop.label]["NS"], masses[pop.label]["BH"]))
+
+        sep[pop.label] = {
+            "BH": np.concatenate((final_bpp_primary_bh["sep"], final_bpp_secondary_bh["sep"])),
+            "NS": np.concatenate((final_bpp_primary_ns["sep"], final_bpp_secondary_ns["sep"])),
+        }
+        sep[pop.label]["CO"] = np.concatenate((sep[pop.label]["NS"], sep[pop.label]["BH"]))
+
+        primary[pop.label] = {
+            "BH": np.concatenate((
+                np.repeat(True, len(final_bpp_primary_bh)),
+                np.repeat(False, len(final_bpp_secondary_bh)),
+            )),
+            "NS": np.concatenate((
+                np.repeat(True, len(final_bpp_primary_ns)),
+                np.repeat(False, len(final_bpp_secondary_ns)),
+            )),
+        }
+        primary[pop.label]["CO"] = np.concatenate((primary[pop.label]["NS"], primary[pop.label]["BH"]))
+
+        companion[pop.label] = {
+            "BH": np.concatenate((
+                pop.final_bpp["kstar_2"][primary_bh],
+                pop.final_bpp["kstar_1"][secondary_bh],
+            )),
+            "NS": np.concatenate((
+                pop.final_bpp["kstar_2"][primary_ns],
+                pop.final_bpp["kstar_1"][secondary_ns],
+            )),
+        }
+        companion[pop.label]["CO"] = np.concatenate((companion[pop.label]["NS"], companion[pop.label]["BH"]))
+
+    return kinematics, masses, bin_nums, sep, primary, companion
+
+
 def save_postprocessed_data(pops, files, kinematics, masses, bin_nums, sep, primary, companion):
     """Save the post-processed data to an HDF5 file.
 
@@ -236,6 +294,24 @@ def save_postprocessed_data(pops, files, kinematics, masses, bin_nums, sep, prim
                 f.create_dataset(f"{comp}/companion", data=companion[pop.label][comp])
 
 
+def save_postprocessed_data_one_dict(data, file):
+    """Save the post-processed data to an HDF5 file."""
+    with h5.File(file, "w") as f:
+        f.attrs["mass_binaries"] = data["mass_binaries"]
+        f.attrs["mass_singles"] = data["mass_singles"]
+        for comp in ["NS", "BH"]:
+            f.create_dataset(f"{comp}/pos", data=data["pos"][comp])
+            f.create_dataset(f"{comp}/vel", data=data["vel"][comp])
+            f.create_dataset(f"{comp}/escaped", data=data["escaped"][comp])
+            f.create_dataset(f"{comp}/bin_nums", data=data["bin_nums"][comp])
+            f.create_dataset(f"{comp}/mass", data=data["mass"][comp])
+            f.create_dataset(f"{comp}/tau", data=data["tau"][comp])
+            f.create_dataset(f"{comp}/init_z", data=data["init_z"][comp])
+            f.create_dataset(f"{comp}/sep", data=data["sep"][comp])
+            f.create_dataset(f"{comp}/primary", data=data["primary"][comp])
+            f.create_dataset(f"{comp}/companion", data=data["companion"][comp])
+
+
 class DummyPop:
     def __init__(self, label, colour):
         self.label = label
@@ -258,7 +334,9 @@ def load_postprocessed_data(files, labels, folder="/mnt/ceph/users/twagg/underwo
     data_dict = {}
     for file, label in zip(files, labels):
         data = {}
-        path = join(folder, f"{file}_processed.h5")
+        path = join(folder, file)
+        if not file.endswith(".h5"):
+            path += ".h5"
         with h5.File(path, "r") as f:
             data["mass_binaries"] = f.attrs["mass_binaries"]
             data["mass_singles"] = f.attrs["mass_singles"]

@@ -2,9 +2,12 @@ import helpers
 import os
 import numpy as np
 from time import time
+from os.path import join
+import cogsworth
 
 do_now = [
-    'time-evolving-pot'
+    'imf_2.7', 'imf_1.9', 'porb_slope_0', 'porb_slope_m1', 'porb_max_1000',
+    'q_power_law_m1', 'q_power_law_p1', 'qmin_pre_ms',
 ]
 do_later = [
 ]
@@ -15,7 +18,7 @@ done = [
     'beta_0.0', 'beta_0.5', 'beta_1.0',
     'alpha_0.1', 'alpha_0.5', 'alpha_2.0', 'alpha_10.0',
     'qcrit_caseB_0.001', 'qcrit_caseB_1000',
-    'fiducial_m2min'
+    'fiducial_m2min', 'time-evolving-pot'
 ]
 
 files = do_now
@@ -26,84 +29,70 @@ N_PARTS = 34
 
 for file in files:
     print("-------------------------\n\n")
-    postprocess_file = os.path.join(postprocess_folder, f"{file}_processed.h5")
-    # if os.path.exists(postprocess_file):
-    #     print(f"File {file}_processed.h5 already exists, skipping...")
-    #     continue
+    postprocess_file = os.path.join(postprocess_folder, f"{file}.h5")
+    if os.path.exists(postprocess_file):
+        print(f"File {file}.h5 already exists, skipping...")
+        continue
 
     start = time()
     print("Processing file:", file)
 
-    pops = [helpers.load_distributed_pop("/mnt/ceph/users/twagg/underworld",
-                                         file, N_PARTS, label=file, colour="")]
+    for part in range(N_PARTS):
+        # check if the postprocessed part already exists
+        if os.path.exists(os.path.join(postprocess_folder, "subfiles", f"{file}_part{part:d}.h5")):
+            print(f"    Part {part} already processed, skipping...")
+            continue
 
-    print("Calculating kinematics and bin numbers...")
+        print(f"    Processing part {part+1}/{N_PARTS}...")
 
-    kinematics = helpers.get_kinematics(pops)
-    bin_nums = helpers.get_shaped_bin_nums(pops)
+        p = cogsworth.pop.load(join(BASE_PATH, file, f"{file}_part{part:d}"))
 
-    print("Calculating masses...")
+        p.initial_binaries
+        p.initial_galaxy
+        p.initC
+        p.final_bpp
+        p.bin_nums
+        p.final_pos
+        p.final_vel
+        p._file = None
 
-    masses = {}
-    for pop in pops:
-        masses[pop.label] = {
-            "BH": np.concatenate((
-                pop.final_bpp["mass_1"][pop.final_bpp["kstar_1"] == 14],
-                pop.final_bpp["mass_2"][pop.final_bpp["kstar_2"] == 14],
-            )),
-            "NS": np.concatenate((
-                pop.final_bpp["mass_1"][pop.final_bpp["kstar_1"] == 13],
-                pop.final_bpp["mass_2"][pop.final_bpp["kstar_2"] == 13],
-            )),
-        }
-        masses[pop.label]["CO"] = np.concatenate((masses[pop.label]["NS"], masses[pop.label]["BH"]))
+        p.label = f"{file}_part{part:d}"
 
-    print("Recording binarity")
+        kinematics, masses, bin_nums, sep, primary, companion = helpers.postprocess_populations(p)
 
-    sep = {}
-    primary = {}
-    companion = {}
-    for pop in pops:
-        sep[pop.label] = {
-            "BH": np.concatenate((
-                pop.final_bpp["sep"][pop.final_bpp["kstar_1"] == 14],
-                pop.final_bpp["sep"][pop.final_bpp["kstar_2"] == 14],
-            )),
-            "NS": np.concatenate((
-                pop.final_bpp["sep"][pop.final_bpp["kstar_1"] == 13],
-                pop.final_bpp["sep"][pop.final_bpp["kstar_2"] == 13],
-            )),
-        }
-        sep[pop.label]["CO"] = np.concatenate((sep[pop.label]["NS"], sep[pop.label]["BH"]))
+        # save the postprocessed part
+        helpers.save_postprocessed_data(
+            [p], [os.path.join(postprocess_folder, "subfiles", f"{file}_part{part:d}.h5")],
+            kinematics, masses, bin_nums, sep, primary, companion
+        )
 
-        primary[pop.label] = {
-            "BH": np.concatenate((
-                np.repeat(True, len(pop.final_bpp["kstar_1"][pop.final_bpp["kstar_1"] == 14])),
-                np.repeat(False, len(pop.final_bpp["kstar_2"][pop.final_bpp["kstar_2"] == 14])),
-            )),
-            "NS": np.concatenate((
-                np.repeat(True, len(pop.final_bpp["kstar_1"][pop.final_bpp["kstar_1"] == 13])),
-                np.repeat(False, len(pop.final_bpp["kstar_2"][pop.final_bpp["kstar_2"] == 13])),
-            )),
-        }
-        primary[pop.label]["CO"] = np.concatenate((primary[pop.label]["NS"], primary[pop.label]["BH"]))
+    print(f"Finished processing all parts for {file} in {time() - start:.2f} seconds.")
 
-        companion[pop.label] = {
-            "BH": np.concatenate((
-                pop.final_bpp["kstar_2"][pop.final_bpp["kstar_1"] == 14],
-                pop.final_bpp["kstar_1"][pop.final_bpp["kstar_2"] == 14],
-            )),
-            "NS": np.concatenate((
-                pop.final_bpp["kstar_2"][pop.final_bpp["kstar_1"] == 13],
-                pop.final_bpp["kstar_1"][pop.final_bpp["kstar_2"] == 13],
-            )),
-        }
-        companion[pop.label]["CO"] = np.concatenate((companion[pop.label]["NS"], companion[pop.label]["BH"]))
+    start = time()
+    print("Combining parts")
+    data = helpers.load_postprocessed_data(
+        [f"{file}_part{part:d}.h5" for part in range(N_PARTS)],
+        labels=[f"{file}_part{part:d}" for part in range(N_PARTS)],
+        folder=os.path.join(postprocess_folder, "subfiles")
+    )
+
+    combined_data = {}
+
+    # concatenate the data across parts
+    keys_to_concat = ["pos", "vel", "escaped", "bin_nums", "mass", "tau",
+                      "init_z", "sep", "primary", "companion"]
+    # with subkeys of BH and NS
+    for key in keys_to_concat:
+        combined_data[key] = {}
+        for subkey in ["BH", "NS"]:
+            combined_data[key][subkey] = np.concatenate([data[f"{file}_part{part:d}"][key][subkey] for part in range(N_PARTS)])
+
+    combined_data["mass_binaries"] = sum(data[f"{file}_part{part:d}"]["mass_binaries"] for part in range(N_PARTS))
+    combined_data["mass_singles"] = sum(data[f"{file}_part{part:d}"]["mass_singles"] for part in range(N_PARTS))
+
+    print(f"Finished combining parts for {file} in {time() - start:.2f} seconds.")
 
     print("Saving processed data...")
-
-    helpers.save_postprocessed_data(
-        pops, [postprocess_file], kinematics, masses, bin_nums, sep, primary, companion
-    )
+    helpers.save_postprocessed_data_one_dict(combined_data, postprocess_file)
     print(f"Finished processing {file} in {time() - start:.2f} seconds.")
 
