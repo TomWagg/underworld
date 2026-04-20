@@ -24,6 +24,12 @@ SIMULATION_FILES = [
     'beta_0.0', 'beta_0.5', 'beta_1.0',
     'alpha_0.1', 'alpha_0.5', 'alpha_2.0', 'alpha_10.0',
     'qcrit_caseB_0.001', 'qcrit_caseB_1000',
+    # initial conditions
+    'imf_1.9', 'imf_2.7',
+    'q_power_law_m1', 'q_power_law_p1',
+    'qmin_pre_ms',
+    'porb_power_law_0', 'porb_power_law_m1',
+    'porb_max_1000'
 ]
 
 SIMULATION_COLOURS = [
@@ -36,7 +42,9 @@ SIMULATION_COLOURS = [
     "#FF9D1E",
     *beta_colours,
     *alpha_colours,
-    "tab:pink", "tab:purple"
+    "tab:pink", "tab:purple",
+    # initial conditions
+    "tab:blue", "tab:orange", "tab:cyan", "tab:olive", "tab:red", "tab:green", "tab:purple", "tab:brown"
 ]
 
 FILE_TO_COLOUR = {f: c for f, c in zip(SIMULATION_FILES, SIMULATION_COLOURS)}
