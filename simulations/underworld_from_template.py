@@ -4,7 +4,13 @@ import argparse
 from os.path import join, exists
 import pathlib
 
+import sys
+sys.path.append("../src")
+
+import helpers
 import time
+
+POSTPROCESS_FOLDER = "/mnt/ceph/users/twagg/underworld/postprocessed/subfiles"
 
 
 def vary_the_underworld(output_dir, processes, simulation_name, file_suffix,
@@ -108,6 +114,28 @@ def vary_the_underworld(output_dir, processes, simulation_name, file_suffix,
     print(f"   Saved underworld population in {time.time() - start:1.2f} seconds")
 
     print(f"   Number of underworld binaries: {len(underworld)}")
+
+    # mask down to just the bound systems with 1 NS or BH and a star
+    co_plus_star_mask = (
+        (underworld.final_bpp['sep'] > 0) &
+        ((underworld.final_bpp['kstar_1'].isin([13, 14])) & (underworld.final_bpp['kstar_2'] < 10)) |
+        ((underworld.final_bpp['kstar_2'].isin([13, 14])) & (underworld.final_bpp['kstar_1'] < 10))
+    )
+    co_plus_star = underworld[co_plus_star_mask]
+    co_plus_star.save(join(simulation_folder, f"{simulation_name}_co_plus_star{file_suffix}"), overwrite=True)
+    print(f"   Saved co+star population in {time.time() - start:1.2f} seconds")
+    print(f"   Number of co+star binaries: {len(co_plus_star)}")
+
+    underworld.label = simulation_name
+
+    # postprocess the file and save it
+    kinematics, masses, bin_nums, sep, primary, companion = helpers.postprocess_populations(underworld)
+
+    # save the postprocessed part
+    helpers.save_postprocessed_data(
+        [underworld], [join(POSTPROCESS_FOLDER, f"{simulation_name}{file_suffix}.h5")],
+        kinematics, masses, bin_nums, sep, primary, companion
+    )
 
     print("Underworld simulation complete!")
     print(f"Total time: {time.time() - very_start:1.2f} seconds")
