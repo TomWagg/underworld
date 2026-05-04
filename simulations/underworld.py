@@ -4,6 +4,7 @@ import argparse
 from os.path import join, exists
 import pathlib
 import astropy.units as u
+import h5py as h5
 
 import sys
 sys.path.append("../src")
@@ -129,10 +130,16 @@ def enter_the_underworld(n_binaries, output_dir, processes, simulation_name, fil
         ((underworld.final_bpp['kstar_1'].isin([13, 14])) & (underworld.final_bpp['kstar_2'] < 10)) |
         ((underworld.final_bpp['kstar_2'].isin([13, 14])) & (underworld.final_bpp['kstar_1'] < 10))
     )
-    co_plus_star = underworld[co_plus_star_mask]
-    co_plus_star.save(join(simulation_folder, f"{simulation_name}_co_plus_star{file_suffix}"), overwrite=True)
-    print(f"   Saved co+star population in {time.time() - start:1.2f} seconds")
-    print(f"   Number of co+star binaries: {len(co_plus_star)}")
+
+    if co_plus_star_mask.sum() == 0:
+        with h5.File(join(simulation_folder, f"{simulation_name}_co_plus_star{file_suffix}.h5"), 'w') as f:
+            f.attrs["status"] = 404     # no binaries found hehe
+        print(f"   No co+star binaries found. Saved empty file in {time.time() - start:1.2f} seconds")
+    else:
+        co_plus_star = underworld[co_plus_star_mask]
+        co_plus_star.save(join(simulation_folder, f"{simulation_name}_co_plus_star{file_suffix}"), overwrite=True)
+        print(f"   Saved co+star population in {time.time() - start:1.2f} seconds")
+        print(f"   Number of co+star binaries: {len(co_plus_star)}")
 
     underworld.label = simulation_name
 
@@ -162,8 +169,8 @@ def main():
         '-o',
         '--output_dir',
         type=str,
-        default='/mnt/ceph/users/twagg/underworld/',
-        help='Output directory for saving results (default: /mnt/ceph/users/twagg/underworld/)'
+        default='/mnt/ceph/users/twagg/underworld/sims/',
+        help='Output directory for saving results (default: /mnt/ceph/users/twagg/underworld/sims/)'
     )
     parser.add_argument(
         '-p',
