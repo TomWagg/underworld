@@ -333,6 +333,7 @@ def load_postprocessed_data(files, labels, folder="/mnt/ceph/users/twagg/underwo
     """
     data_dict = {}
     for file, label in zip(files, labels):
+        print(f"Loading post-processed data for {label} from {file}")
         data = {}
         path = join(folder, file)
         if not file.endswith(".h5"):
