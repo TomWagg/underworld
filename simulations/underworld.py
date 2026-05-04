@@ -75,12 +75,7 @@ def enter_the_underworld(n_binaries, output_dir, processes, simulation_name, fil
         processes=processes,
         ini_file="/mnt/home/twagg/projects/underworld/simulations/params.ini",
         galactic_potential=pot,
-        sfh_model=cogsworth.sfh.SandersBinney2015,
-        sfh_params={
-            "potential": pot,
-            "time_bins": 5,
-            "verbose": True
-        },
+        sfh_model=cogsworth.sfh.SandersBinney2015(potential=pot, time_bins=5, include_bar=True),
         bpp_columns=bpp_columns,
         store_entire_orbits=False,
         error_file_path=None,
@@ -88,7 +83,6 @@ def enter_the_underworld(n_binaries, output_dir, processes, simulation_name, fil
         sampling_mask="mass_1 > 4.0",
         sampling_params=sampling_params
     )
-    initial_pop.BSE_settings["binfrac"] = 1.0
 
     # sample initial binaries
     start = time.time()
