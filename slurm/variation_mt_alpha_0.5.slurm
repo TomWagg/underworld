@@ -24,7 +24,7 @@ if [ -f "/mnt/ceph/users/twagg/underworld/alpha_0.5/alpha_0.5${file_suffix}.h5" 
 else
     # run the distributed underworld simulation
     python /mnt/home/twagg/projects/underworld/simulations/underworld_from_template.py \
-        -o /mnt/ceph/users/twagg/underworld/ \
+        -o /mnt/ceph/users/twagg/underworld/sims/ \
         -p 64 \
         -s "alpha_0.5" \
         -f "${file_suffix}" \

@@ -25,7 +25,7 @@ else
     # run the distributed underworld simulation
     python /mnt/home/twagg/projects/underworld/simulations/underworld.py \
         -n 20000000 \
-        -o /mnt/ceph/users/twagg/underworld/ \
+        -o /mnt/ceph/users/twagg/underworld/sims/ \
         -p 64 \
         -s "porb_max_1000" \
         -f "${file_suffix}" \

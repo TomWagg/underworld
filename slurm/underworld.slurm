@@ -22,7 +22,7 @@ echo "Starting underworld simulation with file suffix: ${file_suffix}"
 # run the distributed underworld simulation
 python /mnt/home/twagg/projects/underworld/simulations/underworld.py \
     -n 10000000 \
-    -o /mnt/ceph/users/twagg/underworld/ \
+    -o /mnt/ceph/users/twagg/underworld/sims/ \
     -p 64 \
     -s fiducial \
     -f "${file_suffix}"

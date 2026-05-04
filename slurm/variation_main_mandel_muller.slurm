@@ -24,7 +24,7 @@ if [ -f "/mnt/ceph/users/twagg/underworld/mandel_muller/mandel_muller${file_suff
 else
     # run the distributed underworld simulation
     python /mnt/home/twagg/projects/underworld/simulations/underworld_from_template.py \
-        -o /mnt/ceph/users/twagg/underworld/ \
+        -o /mnt/ceph/users/twagg/underworld/sims/ \
         -p 64 \
         -s "mandel_muller" \
         -f "${file_suffix}" \

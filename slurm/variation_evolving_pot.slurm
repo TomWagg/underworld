@@ -20,8 +20,8 @@ file_suffix="_part${SLURM_ARRAY_TASK_ID}"
 echo "Starting underworld simulation with file suffix: ${file_suffix}, varying the galactic potential"
 
 # run the distributed underworld simulation
-python /mnt/home/twagg/projects/underworld/simulations/distributed_underworld_diff_pot.py \
-    -o /mnt/ceph/users/twagg/underworld/ \
+python /mnt/home/twagg/projects/underworld/simulations/underworld_evolving_pot.py \
+    -o /mnt/ceph/users/twagg/underworld/sims/ \
     -p 64 \
     -s time-evolving-pot \
     -f "${file_suffix}"

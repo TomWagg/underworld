@@ -24,7 +24,7 @@ if [ -f "/mnt/ceph/users/twagg/underworld/maltsev_fallback_0.75/maltsev_fallback
 else
     # run the distributed underworld simulation
     python /mnt/home/twagg/projects/underworld/simulations/underworld_from_template.py \
-        -o /mnt/ceph/users/twagg/underworld/ \
+        -o /mnt/ceph/users/twagg/underworld/sims/ \
         -p 64 \
         -s "maltsev_fallback_0.75" \
         -f "${file_suffix}" \

@@ -24,7 +24,7 @@ if [ -f "/mnt/ceph/users/twagg/underworld/fryer_rapid/fryer_rapid${file_suffix}.
 else
     # run the distributed underworld simulation
     python /mnt/home/twagg/projects/underworld/simulations/underworld_from_template.py \
-        -o /mnt/ceph/users/twagg/underworld/ \
+        -o /mnt/ceph/users/twagg/underworld/sims/ \
         -p 64 \
         -s "fryer_rapid" \
         -f "${file_suffix}" \

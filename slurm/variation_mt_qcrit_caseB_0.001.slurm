@@ -24,7 +24,7 @@ if [ -f "/mnt/ceph/users/twagg/underworld/qcrit_caseB_0.001/qcrit_caseB_0.001${f
 else
     # run the distributed underworld simulation
     python /mnt/home/twagg/projects/underworld/simulations/underworld_from_template.py \
-        -o /mnt/ceph/users/twagg/underworld/ \
+        -o /mnt/ceph/users/twagg/underworld/sims/ \
         -p 64 \
         -s "qcrit_caseB_0.001" \
         -f "${file_suffix}" \
