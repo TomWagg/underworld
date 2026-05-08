@@ -39,9 +39,9 @@ variations = []
 
 # mt physics variations
 for val in [0.0, 0.5, 1.0]:
-    variations.append({"name": f"beta_{val}", "params": f"beta:{val}", "type": "mt"})
+    variations.append({"name": f"beta_{val}", "params": f"acc_lim_0:{val} acc_lim_1:{val}", "type": "mt"})
 for val in [0.1, 0.5, 2.0, 10.0]:
-    variations.append({"name": f"alpha_{val}", "params": f"alpha1:{val}", "type": "mt"})
+    variations.append({"name": f"alpha_{val}", "params": f"alpha1_0:{val} alpha1_1:{val}", "type": "mt"})
 for val in [0.001, 1000]:
     variations.append({"name": f"qcrit_caseB_{val}", "params": f"qcrit_2:{val}", "type": "mt"})
 

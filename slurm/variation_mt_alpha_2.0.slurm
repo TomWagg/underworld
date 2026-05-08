@@ -28,6 +28,6 @@ else
         -p 64 \
         -s "alpha_2.0" \
         -f "${file_suffix}" \
-        --vary-params alpha1:2.0 \
+        --vary-params alpha1_0:2.0 alpha1_1:2.0 \
         --reset-kicks
 fi

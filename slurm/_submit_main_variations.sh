@@ -1,6 +1,6 @@
 #!/bin/bash
 
-N_PARTS=34
+N_PARTS=5
 
 for slurm_file in variation_main_*.slurm; do
     echo Submitting job array for $slurm_file with $MAX_PARTS parts...

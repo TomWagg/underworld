@@ -28,6 +28,6 @@ else
         -p 64 \
         -s "beta_0.5" \
         -f "${file_suffix}" \
-        --vary-params beta:0.5 \
+        --vary-params acc_lim_0:0.5 acc_lim_1:0.5 \
         --reset-kicks
 fi

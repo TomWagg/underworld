@@ -3,6 +3,7 @@ import gala.potential as gp
 import argparse
 from os.path import join, exists
 import pathlib
+import h5py as h5
 
 import sys
 sys.path.append("../src")
@@ -15,7 +16,7 @@ POSTPROCESS_FOLDER = "/mnt/ceph/users/twagg/underworld/postprocessed/subfiles"
 
 def vary_the_underworld(output_dir, processes, simulation_name, file_suffix,
                         params_to_vary={}, reset_kicks=True,
-                        template_path="/mnt/ceph/users/twagg/underworld/template/",
+                        template_path="/mnt/ceph/users/twagg/underworld/sims/template/",
                         run_as_singles=False):
     """
     Run Underworld simulation with cogsworth.
@@ -66,6 +67,8 @@ def vary_the_underworld(output_dir, processes, simulation_name, file_suffix,
     initial_pop._bpp = None
     initial_pop._kick_info = None
     initial_pop.error_file_path = None
+    initial_pop.SSE_settings = {}
+    initial_pop.BSE_settings = {}
 
     for param, value in params_to_vary.items():
         if param in initial_pop.initC.columns:
@@ -121,10 +124,16 @@ def vary_the_underworld(output_dir, processes, simulation_name, file_suffix,
         ((underworld.final_bpp['kstar_1'].isin([13, 14])) & (underworld.final_bpp['kstar_2'] < 10)) |
         ((underworld.final_bpp['kstar_2'].isin([13, 14])) & (underworld.final_bpp['kstar_1'] < 10))
     )
-    co_plus_star = underworld[co_plus_star_mask]
-    co_plus_star.save(join(simulation_folder, f"{simulation_name}_co_plus_star{file_suffix}"), overwrite=True)
-    print(f"   Saved co+star population in {time.time() - start:1.2f} seconds")
-    print(f"   Number of co+star binaries: {len(co_plus_star)}")
+
+    if co_plus_star_mask.sum() == 0:
+        with h5.File(join(simulation_folder, f"{simulation_name}_co_plus_star{file_suffix}.h5"), 'w') as f:
+            f.attrs["status"] = 404     # no binaries found hehe
+        print(f"   No co+star binaries found. Saved empty file in {time.time() - start:1.2f} seconds")
+    else:
+        co_plus_star = underworld[co_plus_star_mask]
+        co_plus_star.save(join(simulation_folder, f"{simulation_name}_co_plus_star{file_suffix}"), overwrite=True)
+        print(f"   Saved co+star population in {time.time() - start:1.2f} seconds")
+        print(f"   Number of co+star binaries: {len(co_plus_star)}")
 
     underworld.label = simulation_name
 

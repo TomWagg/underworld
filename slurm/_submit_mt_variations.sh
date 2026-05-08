@@ -1,6 +1,6 @@
 #!/bin/bash
 
-N_PARTS=34
+N_PARTS=5
 
 # submit job arrays for each of the variation_*.slurm files in this directory
 # wait 1 second between submissions to avoid overwhelming the scheduler
