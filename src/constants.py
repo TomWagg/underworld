@@ -18,7 +18,6 @@ SIMULATION_FILES = [
     'fiducial',
     # singles
     'singles',
-    # time-evolving potential
     # ---
     # kicks
     'bhflag_0', 'bhflag_3', 'kickflag_1',
@@ -47,10 +46,9 @@ SIMULATION_COLOURS = [
     "slategrey", "tab:purple", maltsev_fb_colours[2],
     maltsev_fb_colours[0], maltsev_fb_colours[1], maltsev_fb_colours[3], maltsev_fb_colours[4],
     maltsev_pf_colours[0], maltsev_pf_colours[1],
-    # "#FF9D1E",
+    "#FF9D1E",
     # initial conditions
     *initC_colours,
-    # "tab:blue", "tab:orange", "tab:cyan", "tab:olive", "tab:red", "tab:green", "tab:purple", "tab:brown",
     # mt physics
     *beta_colours,
     *alpha_colours,
