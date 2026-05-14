@@ -247,10 +247,14 @@ def exp_plus_sech2(x, a, w, b1, b2):
     """Exponential plus sech^2 function for fitting."""
     return a * (w * np.exp(-b1 * x) + (1 - w) * 1 / (np.cosh(b2 * x))**2)
 
+def double_exp_plus_sech2(x, a, w1, w2, b1, b2, b3):
+    """Double exponential plus sech^2 function for fitting."""
+    return a * (w1 * np.exp(-b1 * x) + w2 * np.exp(-b2 * x) + (1 - w1 - w2) * 1 / (np.cosh(b3 * x))**2)
+
 
 def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
                           plot=False, fig=None, ax=None, show=True,
-                          label="", colour="black", n_components=1,
+                          label="", colour="black", model="exp_plus_sech2",
                           scale_height_loc=None, zorder=None,
                           R=None, Rlims=(7.5, 8.5), verbose=False,
                           **kwargs):
@@ -270,10 +274,10 @@ def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
     if hasattr(z, 'unit'):
         z = z.to(u.kpc).value
 
-    hist, bin_edges = np.histogram(z, bins=bins, range=kwargs["xlim"])
+    hist, bin_edges = np.histogram(z, bins=bins, range=kwargs["xlim"], density=True)
     bin_centres = 0.5 * (bin_edges[:-1] + bin_edges[1:])
 
-    hist = hist/hist.max()
+    # hist = hist/hist.max()
 
     scale_height = bin_centres[hist < hist.max() / np.e][0]
 
@@ -281,7 +285,7 @@ def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
 
     z_range = np.linspace(0, bin_edges.max(), 50000)
 
-    if n_components == 1:
+    if model == "exp":
         p0 = [smooth_hist.max(), 1 / scale_height]
         popt, pcov = curve_fit(exponential, bin_centres, smooth_hist, p0=p0)
 
@@ -290,7 +294,18 @@ def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
         scale_height = z_range[fit_pdf <= (1 / np.e)][0]
         scale_height_err = np.sqrt(np.diag(pcov))[1]
 
-    else:
+    elif model == "double_exp":
+        p0 = [smooth_hist.max(), 0.5, 1 / scale_height, 1 / scale_height]
+        popt, pcov = curve_fit(double_exponential, bin_centres, smooth_hist, p0=p0,
+                               bounds=([0, 0, 0, 0], [np.inf, 1, np.inf, np.inf]))
+        scale_height = [1 / popt[2], 1 / popt[3]]
+
+        fit_pdf = double_exponential(z_range, *popt)
+        fit_pdf /= fit_pdf.max()
+        scale_height = z_range[fit_pdf <= (1 / np.e)][0]
+        scale_height_err = max(np.sqrt(np.diag(pcov))[2:4])
+
+    elif model == "exp_plus_sech2":
         p0 = [smooth_hist.max(), 0.5, 2, 2]
         popt, pcov = curve_fit(exp_plus_sech2, bin_centres, smooth_hist, p0=p0,
                                bounds=([0, 0, 0, 0], [np.inf, 1, np.inf, np.inf]))
@@ -301,6 +316,23 @@ def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
         fit_pdf /= fit_pdf.max()
         scale_height = z_range[fit_pdf <= (1 / np.e)][0]
         scale_height_err = max(np.sqrt(np.diag(pcov))[2:4])
+    elif model == "double_exp_plus_sech2":
+        p0 = [smooth_hist.max(), 0.3, 0.3, 2, 2, 2]
+        popt, pcov = curve_fit(double_exp_plus_sech2, bin_centres, smooth_hist, p0=p0,
+                               bounds=([0, 0, 0, 0, 0, 0], [np.inf, 1, 1, np.inf, np.inf, np.inf]))
+        scale_height = [1 / popt[3], 1 / popt[4], 1 / popt[5]]
+
+        fit_pdf = double_exp_plus_sech2(z_range, *popt)
+        fit_pdf /= fit_pdf.max()
+        scale_height = z_range[fit_pdf <= (1 / np.e)][0]
+        scale_height_err = max(np.sqrt(np.diag(pcov))[3:6])
+    else:
+        raise ValueError(f"Model {model} not recognized. Choose from 'exp', 'exp_plus_sech2', or 'double_exp_plus_sech2'.")
+
+    print(f"Fitting {label} using model: {model}")
+    print(f"  Optimal parameters: {popt}")
+    print(f"  Parameter errors: {np.sqrt(np.diag(pcov)) * 1000}")
+    print(f" Estimated scale height: {scale_height * 1000:.2f} pc ± {scale_height_err * 1000:.2f} pc")
 
     if plot:
 
@@ -309,7 +341,13 @@ def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
 
         ax.plot(bin_centres, hist, label=label, color=colour, lw=2, zorder=zorder)
 
-        plot_func = exp_plus_sech2 if n_components == 2 else exponential
+        plot_func_dict = {
+            "exp": exponential,
+            "double_exp": double_exponential,
+            "exp_plus_sech2": exp_plus_sech2,
+            "double_exp_plus_sech2": double_exp_plus_sech2
+        }
+        plot_func = plot_func_dict[model]
         ax.plot(bin_centres, plot_func(bin_centres, *popt), color=colour, ls='--', alpha=0.5, zorder=zorder)
 
         if scale_height_loc is not None:
@@ -321,7 +359,7 @@ def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
 
         ax.set(
             xlabel="Distance from the Galactic plane, |z| (kpc)",
-            ylabel=kwargs.pop('ylabel', r'd$N$/d$|z|$'),
+            ylabel=kwargs.pop('ylabel', r'Density'),
             **kwargs
         )
         ax.set_xlabel(ax.get_xlabel(), fontsize=0.8*fs)
@@ -333,6 +371,66 @@ def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
         return scale_height, scale_height_err, fig, ax
     else:
         return scale_height, scale_height_err, None, None
+
+
+def estimate_scale_height_cdf(
+        z, plot=False, fig=None, ax=None, show=True,
+        label="", colour="black", scale_height_loc=None,
+        R=None, Rlims=(7.5, 8.5), verbose=False, weight_bins=False, **kwargs):
+    """Estimate the scale height of a distribution given z-positions using the cumulative distribution function (CDF).
+    This method does not assume a model, but instead just finds the z-value at which the CDF reaches 1 - 1/e ~ 0.63, which corresponds to the scale height for an exponential distribution."""
+    z = np.abs(z)
+    if R is not None:
+        R = R.to(u.kpc).value if hasattr(R, 'unit') else R
+        mask = (R >= Rlims[0]) & (R < Rlims[1])
+        if verbose:
+            print(len(z), "objects before Rlims")
+        z = z[mask]
+        if verbose:
+            print(len(z), "objects in Rlims")
+
+    if hasattr(z, 'unit'):
+        z = z.to(u.kpc).value
+
+    # calculate empirical CDF without any binning
+    sorted_z = np.sort(z)
+    cdf = np.arange(1, len(sorted_z) + 1) / len(sorted_z)
+
+    scale_height = sorted_z[cdf >= (1 - 1 / np.e)][0]
+
+
+    if plot:
+        if fig is None or ax is None:
+            fig, ax = plt.subplots()
+
+        # interpolate cdf for plotting
+        subsample_z = np.geomspace(sorted_z.min(), sorted_z.max(), 1000)
+        cdf_interp = np.interp(subsample_z, sorted_z, cdf)
+
+        ax.plot(subsample_z, cdf_interp, label=label, color=colour, lw=2)
+
+        if scale_height_loc is not None:
+            loc = 0.5 if scale_height_loc is None else scale_height_loc
+            ax.axvline(scale_height, color=colour, ls='--', alpha=0.5)
+            ax.annotate(f"{scale_height * 1000:.0f} pc", xy=(scale_height, loc), fontsize=0.7*fs,
+                        rotation=0, color=colour, ha='center', va='top',
+                        bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=colour))
+
+        ax.set(
+            xlabel="Distance from the Galactic plane, |z| (kpc)",
+            ylabel=kwargs.pop('ylabel', r'$F(z)$'),
+            xscale=kwargs.pop('xscale', 'log'),
+            **kwargs
+        )
+        ax.set_xlabel(ax.get_xlabel(), fontsize=0.8*fs)
+        ax.legend(fontsize=0.7*fs)
+
+        if show:
+            plt.show()
+
+        return scale_height, None, fig, ax
+    else:
+        return scale_height, None, None, None
 
 
 def absolute_galactocentric_height(pops, kinematics, co_type="CO", fig=None, axes=None, show=True):
