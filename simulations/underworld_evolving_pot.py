@@ -97,8 +97,8 @@ def main():
         '-o',
         '--output_dir',
         type=str,
-        default='/mnt/ceph/users/twagg/underworld/',
-        help='Output directory for saving results (default: /mnt/ceph/users/twagg/underworld/)'
+        default='/mnt/ceph/users/twagg/underworld/sims/',
+        help='Output directory for saving results (default: /mnt/ceph/users/twagg/underworld/sims/)'
     )
     parser.add_argument(
         '-p',
