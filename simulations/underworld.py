@@ -76,14 +76,16 @@ def enter_the_underworld(n_binaries, output_dir, processes, simulation_name, fil
         processes=processes,
         ini_file="/mnt/home/twagg/projects/underworld/simulations/params.ini",
         galactic_potential=pot,
-        sfh_model=cogsworth.sfh.SandersBinney2015(potential=pot, time_bins=5, include_bar=True),
+        sfh_model=cogsworth.sfh.SandersBinney2015(potential=pot, time_bins=5, include_bar=False),
         bpp_columns=bpp_columns,
         store_entire_orbits=False,
         error_file_path=None,
         v_dispersion=0 * u.km / u.s,
         sampling_mask="mass_1 > 4.0",
-        sampling_params=sampling_params
     )
+
+    # overwrite sampling_params after initialisation so we can overwrite the ini file
+    initial_pop.sampling_params.update(sampling_params)
 
     # sample initial binaries
     start = time.time()
