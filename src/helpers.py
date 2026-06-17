@@ -5,6 +5,7 @@ import warnings
 import logging
 import h5py as h5
 from os.path import join
+import pandas as pd
 
 
 def load_distributed_pop(base_path, sim_name, parts, label=None, colour=None):
@@ -66,8 +67,6 @@ def get_kinematics(pops):
 
     for pop in pops:
         kinematics[pop.label] = {}
-        secondary_pos = pop.final_pos[:len(pop)].copy()
-        secondary_pos[pop.disrupted] = pop.final_pos[len(pop):]
 
         ns_pos = np.concatenate((pop.final_primary_pos[pop.final_bpp["kstar_1"] == 13],
                                 pop.final_secondary_pos[pop.final_bpp["kstar_2"] == 13]))
@@ -81,14 +80,10 @@ def get_kinematics(pops):
             "CO": co_pos,
         }
 
-        primary_vel = pop.final_vel[:len(pop)]
-        secondary_vel = pop.final_vel[:len(pop)].copy()
-        secondary_vel[pop.disrupted] = pop.final_vel[len(pop):]
-
-        ns_vel = np.concatenate((primary_vel[pop.final_bpp["kstar_1"] == 13],
-                                secondary_vel[pop.final_bpp["kstar_2"] == 13]))
-        bh_vel = np.concatenate((primary_vel[pop.final_bpp["kstar_1"] == 14],
-                                secondary_vel[pop.final_bpp["kstar_2"] == 14]))
+        ns_vel = np.concatenate((pop.final_primary_vel[pop.final_bpp["kstar_1"] == 13],
+                                pop.final_secondary_vel[pop.final_bpp["kstar_2"] == 13]))
+        bh_vel = np.concatenate((pop.final_primary_vel[pop.final_bpp["kstar_1"] == 14],
+                                pop.final_secondary_vel[pop.final_bpp["kstar_2"] == 14]))
         co_vel = np.concatenate((ns_vel, bh_vel))
 
         kinematics[pop.label]["vel"] = {
@@ -356,3 +351,68 @@ def load_postprocessed_pops(files, labels, colours, folder="/mnt/ceph/users/twag
     pops = [DummyPop(label, colour) for label, colour in zip(labels, colours)]
     data = load_postprocessed_data(files, labels, folder=folder)
     return pops, data
+
+
+def get_kick_stats(pop):
+    """Extract the natal kick statistics for black holes in the population,
+    including the natal kick magnitude, the change in systemic velocity, and whether the binary was disrupted.
+    
+    Parameters
+    ----------
+    pop : cogsworth.Population
+        The population object containing the binary population synthesis data.  
+    """
+    # find primary BH formation rows
+    primary_bh_rows = pop.bpp[pop.bpp["row_num"].isin(pop.bpp[pop.bpp["evol_type"] == 15]["row_num"] + 1) & (pop.bpp["kstar_1"] == 14)]
+    primary_bh_explosion_bin_nums = primary_bh_rows["bin_num"].values
+
+    # get the final BH mass and companion mass for the primary BHs
+    primary_bh_mass = primary_bh_rows["mass_1"].values
+    primary_companion_mass = primary_bh_rows["mass_2"].values
+
+    # now look at pre-SN properties for the primary BHs, get pre-SN separation and progenitor mass
+    primary_pre_sn = pop.bpp.loc[primary_bh_explosion_bin_nums][pop.bpp.loc[primary_bh_explosion_bin_nums, "kstar_1"] < 13].drop_duplicates(subset="bin_num", keep="last")
+    primary_sep = primary_pre_sn["sep"].values
+    primary_progenitor_mass = primary_pre_sn["mass_1"].values
+
+    # repeat for secondary BHs
+    secondary_bh_rows = pop.bpp[pop.bpp["row_num"].isin(pop.bpp[pop.bpp["evol_type"] == 16]["row_num"] + 1) & (pop.bpp["kstar_2"] == 14)]
+    secondary_bh_explosion_bin_nums = secondary_bh_rows["bin_num"].values
+    secondary_bh_mass = secondary_bh_rows["mass_2"].values
+    secondary_companion_mass = secondary_bh_rows["mass_1"].values
+    secondary_pre_sn = pop.bpp.loc[secondary_bh_explosion_bin_nums][pop.bpp.loc[secondary_bh_explosion_bin_nums, "kstar_2"] < 13].drop_duplicates(subset="bin_num", keep="last")
+    secondary_sep = secondary_pre_sn["sep"].values
+    secondary_progenitor_mass = secondary_pre_sn["mass_2"].values
+
+    # now use the bin_nums to get the specific kick information for primaries
+    primary_kick_rows = pop.kick_info.loc[primary_bh_explosion_bin_nums][pop.kick_info.loc[primary_bh_explosion_bin_nums]["star"] == 1]
+    primary_kicks = primary_kick_rows["natal_kick"].values
+    primary_deltav = np.linalg.norm(primary_kick_rows[["delta_vsysx_1", "delta_vsysy_1", "delta_vsysz_1"]], axis=1)
+    primary_disrupted = primary_kick_rows["disrupted"].values
+
+    # same for secondaries if they exist
+    secondary_kicks = []
+    secondary_deltav = []
+    secondary_disrupted = []
+    if len(secondary_bh_explosion_bin_nums) > 0:
+        secondary_kick_rows = pop.kick_info.loc[secondary_bh_explosion_bin_nums][pop.kick_info.loc[secondary_bh_explosion_bin_nums]["star"] == 2]
+        secondary_deltav = np.linalg.norm(secondary_kick_rows[["delta_vsysx_2", "delta_vsysy_2", "delta_vsysz_2"]], axis=1)
+        secondary_kicks = secondary_kick_rows["natal_kick"].values
+        secondary_disrupted = secondary_kick_rows["disrupted"].values
+
+    is_primary = np.concatenate([np.repeat(True, len(primary_kicks)), np.repeat(False, len(secondary_kicks))])
+
+    # combine primary and secondary stats into a single DataFrame
+    kick_stat_dict = {}
+    kick_stat_dict["natal_kick"] = np.concatenate([primary_kicks, secondary_kicks])
+    kick_stat_dict["delta_v"] = np.concatenate([primary_deltav, secondary_deltav])
+    kick_stat_dict["disrupted"] = np.concatenate([primary_disrupted, secondary_disrupted])
+    kick_stat_dict["bh_mass"] = np.concatenate([primary_bh_mass, secondary_bh_mass])
+    kick_stat_dict["companion_mass"] = np.concatenate([primary_companion_mass, secondary_companion_mass])
+    kick_stat_dict["separation_at_sn"] = np.concatenate([primary_sep, secondary_sep])
+    kick_stat_dict["progenitor_mass"] = np.concatenate([primary_progenitor_mass, secondary_progenitor_mass])
+    kick_stat_dict["is_primary"] = is_primary
+    kick_stat_dict["bin_num"] = np.concatenate([primary_bh_explosion_bin_nums, secondary_bh_explosion_bin_nums])
+
+    kick_stat_df = pd.DataFrame(kick_stat_dict)
+    return kick_stat_df
