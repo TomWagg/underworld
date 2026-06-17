@@ -158,13 +158,13 @@ def plot_side_on_density(xs, zs, labels, xlim=20, zlim=12, n_bins=200, sigma=1.0
     return fig, ax
 
 
-def nice_transparent_hist(ax, data, bins, label, colour, density, lw=2, alpha=0.4):
-    ax.hist(data, bins=bins, color=colour, lw=lw, histtype='step',  density=density, label=label)
-    ax.hist(data, bins=bins, color=colour, alpha=alpha, density=density)
+def nice_transparent_hist(ax, data, bins, label, colour, density, lw=2, alpha=0.4, cumulative=False):
+    ax.hist(data, bins=bins, color=colour, lw=lw, histtype='step', density=density, label=label, cumulative=cumulative)
+    ax.hist(data, bins=bins, color=colour, alpha=alpha, density=density, cumulative=cumulative)
 
 
 def compare_table_quantity(pops, quantity, kstar, bins, xlabel, ylabel, density=True, table_name="final_bpp",
-                           lw=2,
+                           lw=2, cumulative=False,
                            fig=None, ax=None, show=True, **settings):
     if fig is None or ax is None:
         fig, ax = plt.subplots()
@@ -181,7 +181,7 @@ def compare_table_quantity(pops, quantity, kstar, bins, xlabel, ylabel, density=
         nice_transparent_hist(
             ax=ax, data=data, bins=bins,
             label=f"{pop.label}\nN={len(data)}", colour=pop.colour,
-            density=density, lw=lw
+            density=density, lw=lw, cumulative=cumulative
         )
 
     ax.set(
@@ -200,6 +200,7 @@ def compare_table_quantity(pops, quantity, kstar, bins, xlabel, ylabel, density=
 
 def plot_mass_histogram(pops, data, bins, co_type, xlabel, ylabel, density=True, lw=2, alpha=0.4,
                         fig=None, ax=None, show=True, labels=None, colours=None, legend_title=None,
+                        cumulative=False,
                         **settings):
     labels = [f"{pop.label}\nN={len(data[pop.label]['mass'][co_type])}"
               for pop in pops] if labels is None else labels
@@ -212,7 +213,7 @@ def plot_mass_histogram(pops, data, bins, co_type, xlabel, ylabel, density=True,
         nice_transparent_hist(
             ax=ax, data=data[pop.label]['mass'][co_type], bins=bins,
             label=None, colour=colour,
-            density=density, lw=lw, alpha=alpha
+            density=density, lw=lw, alpha=alpha, cumulative=cumulative
         )
 
     ax.set(
