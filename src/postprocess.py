@@ -45,7 +45,7 @@ for file in files:
 
         print(f"    Processing part {part+1}/{N_PARTS}...")
 
-        p = cogsworth.pop.load(join(BASE_PATH, file, f"{file}_part{part:d}"))
+        p = cogsworth.pop.load(join(BASE_PATH, "sims", file, f"{file}_part{part:d}"))
 
         p.initial_binaries
         p.initial_galaxy
