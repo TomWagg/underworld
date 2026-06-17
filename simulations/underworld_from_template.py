@@ -4,6 +4,8 @@ import argparse
 from os.path import join, exists
 import pathlib
 import h5py as h5
+import pandas as pd
+import numpy as np
 
 import sys
 sys.path.append("../src")
@@ -17,7 +19,7 @@ POSTPROCESS_FOLDER = "/mnt/ceph/users/twagg/underworld/postprocessed/subfiles"
 def vary_the_underworld(output_dir, processes, simulation_name, file_suffix,
                         params_to_vary={}, reset_kicks=True,
                         template_path="/mnt/ceph/users/twagg/underworld/sims/template/",
-                        run_as_singles=False):
+                        run_as_singles=False, singles_method="split"):
     """
     Run Underworld simulation with cogsworth.
 
@@ -37,6 +39,12 @@ def vary_the_underworld(output_dir, processes, simulation_name, file_suffix,
         Path to the template population files folder.
     run_as_singles : bool
         Whether to treat all binaries as singles by giving them a very large initial separation.
+    singles_method : str
+        Method for treating binaries as singles if run_as_singles is True.
+        Options are "wide_binaries" or "split".
+        "wide_binaries" gives each binary an extremely large initial separation to ensure
+        they are treated as singles. "split" splits each binary into two single stars with the
+        same initial conditions as the primary and secondary.
     """
     # quickly check if output directory exists
     if not exists(output_dir):
@@ -65,44 +73,92 @@ def vary_the_underworld(output_dir, processes, simulation_name, file_suffix,
 
     # delete the bpp, update initC columns as needed
     initial_pop._bpp = None
+    initial_pop._bin_nums = None
+    initial_pop._bcm = None
     initial_pop._kick_info = None
     initial_pop.error_file_path = None
     initial_pop.SSE_settings = {}
     initial_pop.BSE_settings = {}
 
     for param, value in params_to_vary.items():
-        if param in initial_pop.initC.columns:
+        if param in initial_pop._initial_binaries.columns:
             print(f"Updating initial condition parameter: {param} to {value}")
-            initial_pop.initC[param] = value
+            initial_pop._initial_binaries[param] = value
         else:
             raise ValueError(f"Parameter {param} not found in initial conditions columns!")
 
     if reset_kicks:
         for col in ["natal_kick_1", "phi_1", "theta_1", "natal_kick_2", "phi_2", "theta_2",
                     "mean_anomaly_1", "mean_anomaly_2"]:
-            initial_pop.initC[col] = -100.0
+            initial_pop._initial_binaries[col] = -100.0
 
         # drop randomseed column if it exists
         if "randomseed" in initial_pop.initC.columns:
-            initial_pop.initC.drop(columns=["randomseed"], inplace=True)
+            initial_pop._initial_binaries.drop(columns=["randomseed"], inplace=True)
 
     initial_pop.processes = processes
     initial_pop.galactic_potential = gp.MilkyWayPotential(version='v2')
 
     if run_as_singles:
         # give each binary an extremely large initial separation to ensure they are treated as singles
-        initial_pop.initC['porb'] = 1e20
+        if singles_method == "wide_binaries":
+            initial_pop._initial_binaries['porb'] = 1e20
+
+        # split each binary into two single stars
+        elif singles_method == "split":
+            # primary has the same initC but set secondary mass to 0 and kstar_2 to 0, porb to 0 etc.
+            primary_initC = initial_pop.initC.copy()
+            primary_initC['mass_2'] = 0.0
+            primary_initC['kstar_2'] = 15
+            primary_initC['porb'] = 0.0
+            primary_initC['ecc'] = 0.0
+
+            # similar for secondary but copy secondary into the primary slots first
+            secondary_initC = initial_pop.initC.copy()
+            secondary_initC['mass_1'] = secondary_initC['mass_2']
+            secondary_initC['kstar_1'] = secondary_initC['kstar_2']
+            secondary_initC['mass_2'] = 0.0
+            secondary_initC['kstar_2'] = 15
+            secondary_initC['porb'] = 0.0
+            secondary_initC['ecc'] = 0.0
+            secondary_initC["bin_num"] += initial_pop.initC["bin_num"].max() + 1
+            secondary_initC.index = secondary_initC["bin_num"].values
+
+            # concatenate the primary and secondary initC together
+            total_initC = pd.concat([primary_initC, secondary_initC], ignore_index=True)
+
+            # construct a dummy StarFormationHistory that contains the concatenated distributions
+            new_initial_galaxy = cogsworth.sfh.StarFormationHistory()
+            for var in ["tau", "Z", "x", "y", "z", "v_x", "v_y", "v_z", "v_R", "v_R"]:
+                old_var = getattr(initial_pop.initial_galaxy, var)
+                setattr(new_initial_galaxy, "_" + var, np.concatenate([old_var, old_var]))
+
+            # new_initial_galaxy = cogsworth.sfh.concat(initial_pop.initial_galaxy, initial_pop.initial_galaxy)
+            # total_initC["metallicity"] = new_initial_galaxy.Z
+            # total_initC["tphysf"] = new_initial_galaxy.tau.to(u.Myr).value
+            # total_initC.loc[total_initC["metallicity"] < 1e-4, "metallicity"] = 1e-4
+            # total_initC.loc[total_initC["metallicity"] > 0.03, "metallicity"] = 0.03
+
+            # mask out the low-mass single stars
+            mask = total_initC["mass_1"].values > 6.2
+            total_initC = total_initC[mask]
+            new_initial_galaxy = new_initial_galaxy[mask]
+
+            # feed it back into the population
+            initial_pop._initial_binaries = total_initC
+            initial_pop._initial_galaxy = new_initial_galaxy
+
+            initial_pop.n_binaries = len(initial_pop._initial_binaries)
+            initial_pop.n_binaries_match = len(initial_pop._initial_binaries)
+
+            print(f"   Split binaries into singles, new population size: {len(initial_pop)}")
+        else:
+            raise ValueError(f"Invalid method for treating binaries as singles: {singles_method}")
 
     # perform stellar evolution for binaries
     start = time.time()
     initial_pop.perform_stellar_evolution()
     print(f"   Performed stellar evolution in {time.time() - start:1.2f} seconds")
-
-    # if simulation_name == "beta_0.5":
-    #     print("Debugging beta now")
-    #     initial_pop.initC.to_hdf("/mnt/ceph/users/twagg/underworld/problems.h5", key="initC")
-    #     initial_pop.bpp.to_hdf("/mnt/ceph/users/twagg/underworld/problems.h5", key="bpp")
-    #     initial_pop.kick_info.to_hdf("/mnt/ceph/users/twagg/underworld/problems.h5", key="kick_info")
 
     # do galactic evolution only for the binaries that end up as underworld objects
     start = time.time()
@@ -200,6 +256,16 @@ def main():
         default=False
     )
 
+    parser.add_argument(
+        '--singles-method',
+        type=str,
+        default='split',
+        choices=['wide_binaries', 'split'],
+        help='Method for treating binaries as singles if --run-as-singles is set (default: split). '
+             '"wide_binaries" gives each binary an extremely large initial separation to ensure they are treated as singles. '
+             '"split" splits each binary into two single stars with the same initial conditions as the primary and secondary.'
+    )
+
     args = parser.parse_args()
 
     params_to_vary = {}
@@ -224,6 +290,7 @@ def main():
         params_to_vary=params_to_vary,
         reset_kicks=args.reset_kicks,
         run_as_singles=args.run_as_singles,
+        singles_method=args.singles_method
     )
 
 
