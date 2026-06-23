@@ -6,19 +6,21 @@ from os.path import join
 import cogsworth
 
 do_now = [
+    "bhflag_0", 'bhflag_3', 'fryer_rapid', 'kickflag_1', 'mandel_muller',
+    'maltsev_fallback_0.0', 'maltsev_fallback_0.25', 'maltsev_fallback_0.5', 'maltsev_fallback_0.75',
+    'maltsev_fallback_1.0', 'maltsev_pf_prob_0.0', 'maltsev_pf_prob_1.0',
     'imf_2.7', 'imf_1.9', 'porb_slope_0', 'porb_slope_m1', 'porb_max_1000',
     'q_power_law_m1', 'q_power_law_p1', 'qmin_pre_ms',
+    'singles',
+    'alpha_0.1', 'alpha_0.5', 'alpha_2.0', 'alpha_10.0',
+    'beta_0.0', 'beta_0.5', 'beta_1.0',
+    'qcrit_caseB_0.001', 'qcrit_caseB_1000',
+    'time-evolving-pot',
 ]
 do_later = [
 ]
 done = [
-    'fiducial', 'singles', 'bhflag_0', 'bhflag_3', 'fryer_rapid', 'kickflag_1', 'mandel_muller',
-    'maltsev_fallback_0.0', 'maltsev_fallback_0.25', 'maltsev_fallback_0.5', 'maltsev_fallback_0.75',
-    'maltsev_fallback_1.0', 'maltsev_pf_prob_0.0', 'maltsev_pf_prob_1.0',
-    'beta_0.0', 'beta_0.5', 'beta_1.0',
-    'alpha_0.1', 'alpha_0.5', 'alpha_2.0', 'alpha_10.0',
-    'qcrit_caseB_0.001', 'qcrit_caseB_1000',
-    'fiducial_m2min', 'time-evolving-pot'
+    'fiducial', 
 ]
 
 files = do_now
