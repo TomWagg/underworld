@@ -29,5 +29,6 @@ else
         -s "singles" \
         -f "${file_suffix}" \
         --reset-kicks \
-        --run-as-singles
+        --run-as-singles \
+        --singles-method split
 fi

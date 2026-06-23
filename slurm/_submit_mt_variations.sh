@@ -1,6 +1,6 @@
 #!/bin/bash
 
-FIRST_PART=5
+FIRST_PART=0
 N_PARTS=34
 
 # submit job arrays for each of the variation_*.slurm files in this directory
