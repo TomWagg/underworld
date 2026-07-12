@@ -18,7 +18,7 @@ SIMULATION_FILES = [
     'fiducial',
     # ---
     # kicks
-    'bhflag_0', 'bhflag_3', 'kickflag_1',
+    'bhflag_0', 'kickflag_1', 'bhflag_3', 
     # remnant mass prescriptions
     'fryer_rapid', 'mandel_muller', 'maltsev_fallback_0.5',
     'maltsev_fallback_0.0', 'maltsev_fallback_0.25', 'maltsev_fallback_0.75', 'maltsev_fallback_1.0',
@@ -41,7 +41,7 @@ SIMULATION_FILES = [
 
 SIMULATION_COLOURS = [
     "#333",
-    "#65B860", "darkgreen",  "#C0D061",
+    "#65B860", "#C0D061", "darkgreen", 
     "slategrey", "tab:purple", maltsev_fb_colours[2],
     maltsev_fb_colours[0], maltsev_fb_colours[1], maltsev_fb_colours[3], maltsev_fb_colours[4],
     maltsev_pf_colours[0], maltsev_pf_colours[1],
