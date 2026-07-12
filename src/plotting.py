@@ -158,9 +158,9 @@ def plot_side_on_density(xs, zs, labels, xlim=20, zlim=12, n_bins=200, sigma=1.0
     return fig, ax
 
 
-def nice_transparent_hist(ax, data, bins, label, colour, density, lw=2, alpha=0.4, cumulative=False):
-    ax.hist(data, bins=bins, color=colour, lw=lw, histtype='step', density=density, label=label, cumulative=cumulative)
-    ax.hist(data, bins=bins, color=colour, alpha=alpha, density=density, cumulative=cumulative)
+def nice_transparent_hist(ax, data, bins, label, colour, density, lw=2, alpha=0.4, cumulative=False, **kwargs):
+    ax.hist(data, bins=bins, color=colour, lw=lw, histtype='step', density=density, label=label, cumulative=cumulative, **kwargs)
+    ax.hist(data, bins=bins, color=colour, alpha=alpha, density=density, cumulative=cumulative, **kwargs)
 
 
 def compare_table_quantity(pops, quantity, kstar, bins, xlabel, ylabel, density=True, table_name="final_bpp",
@@ -200,7 +200,7 @@ def compare_table_quantity(pops, quantity, kstar, bins, xlabel, ylabel, density=
 
 def plot_mass_histogram(pops, data, bins, co_type, xlabel, ylabel, density=True, lw=2, alpha=0.4,
                         fig=None, ax=None, show=True, labels=None, colours=None, legend_title=None,
-                        cumulative=False,
+                        cumulative=False, show_legend=True,
                         **settings):
     labels = [f"{pop.label}\nN={len(data[pop.label]['mass'][co_type])}"
               for pop in pops] if labels is None else labels
@@ -211,7 +211,7 @@ def plot_mass_histogram(pops, data, bins, co_type, xlabel, ylabel, density=True,
 
     for pop, colour in zip(pops, colours):
         nice_transparent_hist(
-            ax=ax, data=data[pop.label]['mass'][co_type], bins=bins,
+            ax=ax, data=data[pop.label]['mass'][co_type][~data[pop.label]["escaped"][co_type]], bins=bins,
             label=None, colour=colour,
             density=density, lw=lw, alpha=alpha, cumulative=cumulative
         )
@@ -222,12 +222,13 @@ def plot_mass_histogram(pops, data, bins, co_type, xlabel, ylabel, density=True,
         **settings
     )
 
-    # construct a legend with rectangles matching the histogram colors (lines have same colour, fill has
-    # the same alpha)
-    handles = [mpl.patches.Patch(edgecolor=colour, facecolor=mpl.colors.to_rgba(colour, alpha=alpha),
-                                 label=label, lw=lw) for colour, label in zip(colours, labels)]
-    leg = ax.legend(handles=handles, title=legend_title, frameon=False)
-    leg.get_title().set_multialignment('center')
+    if show_legend:
+        # construct a legend with rectangles matching the histogram colors (lines have same colour, fill has
+        # the same alpha)
+        handles = [mpl.patches.Patch(edgecolor=colour, facecolor=mpl.colors.to_rgba(colour, alpha=alpha),
+                                    label=label, lw=lw) for colour, label in zip(colours, labels)]
+        leg = ax.legend(handles=handles, title=legend_title, frameon=False)
+        leg.get_title().set_multialignment('center')
 
     if show:
         plt.show()

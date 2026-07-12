@@ -16,8 +16,6 @@ initC_colours = [mpl.colors.to_hex(c) for c in initC_colours]
 
 SIMULATION_FILES = [
     'fiducial',
-    # singles
-    'singles',
     # ---
     # kicks
     'bhflag_0', 'bhflag_3', 'kickflag_1',
@@ -27,6 +25,8 @@ SIMULATION_FILES = [
     'maltsev_pf_prob_0.0', 'maltsev_pf_prob_1.0',
     # time evolving potential
     'time-evolving-pot',
+    # singles
+    'singles',
     # initial conditions
     'imf_1.9', 'imf_2.7',
     'q_power_law_m1', 'q_power_law_p1',
@@ -41,13 +41,13 @@ SIMULATION_FILES = [
 
 SIMULATION_COLOURS = [
     "#333",
-    "#05b3a4",
     "#65B860", "darkgreen",  "#C0D061",
     "slategrey", "tab:purple", maltsev_fb_colours[2],
     maltsev_fb_colours[0], maltsev_fb_colours[1], maltsev_fb_colours[3], maltsev_fb_colours[4],
     maltsev_pf_colours[0], maltsev_pf_colours[1],
     "#FF9D1E",
     # initial conditions
+    "#05b3a4",
     *initC_colours,
     # mt physics
     *beta_colours,
