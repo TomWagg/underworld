@@ -470,32 +470,42 @@ def absolute_galactocentric_height(pops, kinematics, co_type="CO", fig=None, axe
     return fig, axes
 
 
-def plot_avg_mass_vs_z(mean_masses, labels, colours, z_maxes, z_range,
+def plot_avg_mass_vs_z(mean_masses, labels, colours, z_maxes, z_range, zorders=None,
                        fig=None, ax=None, show=True, save=None, legend_kwargs={}, ax_kwargs={}):
     # plot the average mass as a function of |z|
     if fig is None or ax is None:
         fig, ax = plt.subplots(figsize=(7, 7))
 
-    for mean_bh, label, c, z_max in zip(mean_masses, labels, colours, z_maxes):
+    if zorders is None:
+        zorders = range(len(mean_masses))
+
+    for mean_bh, label, c, z_max, zorder in zip(mean_masses, labels, colours, z_maxes, zorders):
         mask = z_range < z_max
-        ax.plot(z_range[mask], mean_bh[mask], lw=2, label=label, color=c)
+        ax.plot(z_range[mask], mean_bh[mask], lw=3, label=label, color=c, zorder=zorder)
 
     ax.axvspan(3, 10, color='gray', alpha=0.3, lw=0)
 
     ax.set(
-        xscale="log",
-        xlabel=r'Distance from Galactic plane, $|z|$ [kpc]',
-        ylabel='Average BH Mass [M$_\odot$]',
-        xlim=(z_range.min(), z_range.max()),
+        xscale=ax_kwargs.pop('xscale', 'log'),
+        xlabel=ax_kwargs.pop('xlabel', r'Distance from Galactic plane, $|z|$ [kpc]'),
+        ylabel=ax_kwargs.pop('ylabel', r'Median BH Mass [M$_\odot$]'),
+        xlim=ax_kwargs.pop('xlim', (z_range.min(), z_range.max())),
         **ax_kwargs
     )
 
     ax.set_xlabel(ax.get_xlabel(), fontsize=0.9*fs)
 
-    ax.legend(title=legend_kwargs.pop('title', "Black holes"),
-              fontsize=legend_kwargs.pop('fontsize', 0.7*fs),
-              title_fontsize=legend_kwargs.pop('title_fontsize', 0.7*fs),
-              **legend_kwargs)
+    leg_handles, leg_labels = ax.get_legend_handles_labels()
+    thicker_leg_handles = [mpl.lines.Line2D([], [], color=h.get_color(), lw=5) for h in leg_handles]
+
+
+    ax.legend(
+        thicker_leg_handles, leg_labels,
+        title=legend_kwargs.pop('title', "Black holes"),
+        fontsize=legend_kwargs.pop('fontsize', 0.7*fs),
+        title_fontsize=legend_kwargs.pop('title_fontsize', 0.7*fs),
+        **legend_kwargs
+    )
 
     ax.yaxis.set_minor_locator(mpl.ticker.MultipleLocator(0.25))
 

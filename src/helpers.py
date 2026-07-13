@@ -106,7 +106,8 @@ def get_kinematics(pops):
     return kinematics
 
 
-def get_average_mass_at_z(abs_zs, bh_masses, z_range=np.geomspace(0.1, 10, 1000), window_width=0.1):
+def get_average_mass_at_z(abs_zs, bh_masses, z_range=np.geomspace(0.1, 10, 1000), window_width=0.1,
+                          average_function=np.mean, log_scale=True):
     """Calculate the average black hole mass as a function of absolute distance from the Galactic plane.
 
     Parameters
@@ -126,11 +127,21 @@ def get_average_mass_at_z(abs_zs, bh_masses, z_range=np.geomspace(0.1, 10, 1000)
         2D array of mean masses with shape (len(abs_zs), len(z_range)).
     """
     mean_masses = np.zeros((len(abs_zs), len(z_range)))
-    half_window = window_width / 2
-    for i, z_centre in enumerate(z_range):
-        for j in range(len(abs_zs)):
-            in_window = (abs_zs[j] >= (z_centre - half_window)) & (abs_zs[j] < (z_centre + half_window))
-            mean_masses[j, i] = np.mean(bh_masses[j][in_window]) if np.sum(in_window) > 0 else np.nan
+
+    if log_scale:
+        log_z_range = np.log10(z_range)
+        half_window = window_width / 2
+        for i, log_z_centre in enumerate(log_z_range):
+            for j in range(len(abs_zs)):
+                log_abs_zs = np.log10(abs_zs[j])
+                in_window = (log_abs_zs >= (log_z_centre - half_window)) & (log_abs_zs < (log_z_centre + half_window))
+                mean_masses[j, i] = average_function(bh_masses[j][in_window]) if np.sum(in_window) > 0 else np.nan
+    else:
+        half_window = window_width / 2
+        for i, z_centre in enumerate(z_range):
+            for j in range(len(abs_zs)):
+                in_window = (abs_zs[j] >= (z_centre - half_window)) & (abs_zs[j] < (z_centre + half_window))
+                mean_masses[j, i] = average_function(bh_masses[j][in_window]) if np.sum(in_window) > 0 else np.nan
 
     return mean_masses
 
