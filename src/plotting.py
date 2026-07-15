@@ -409,14 +409,14 @@ def estimate_scale_height_cdf(
         subsample_z = np.geomspace(sorted_z.min(), sorted_z.max(), 1000)
         cdf_interp = np.interp(subsample_z, sorted_z, cdf)
 
-        ax.plot(subsample_z, cdf_interp, label=label, color=colour, lw=2)
+        ax.plot(subsample_z, cdf_interp, label=label, color=colour, lw=4)
 
         if scale_height_loc is not None:
             loc = 0.5 if scale_height_loc is None else scale_height_loc
-            ax.axvline(scale_height, color=colour, ls='--', alpha=0.5)
+            ax.axvline(scale_height, color=colour, ls='--', alpha=0.75, lw=2)
             ax.annotate(f"{scale_height * 1000:.0f} pc", xy=(scale_height, loc), fontsize=0.7*fs,
                         rotation=0, color=colour, ha='center', va='top',
-                        bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=colour))
+                        bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=colour, lw=2))
 
         ax.set(
             xlabel="Distance from the Galactic plane, |z| (kpc)",
