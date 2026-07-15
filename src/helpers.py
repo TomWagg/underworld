@@ -385,6 +385,7 @@ def get_kick_stats(pop):
     primary_pre_sn = pop.bpp.loc[primary_bh_explosion_bin_nums][pop.bpp.loc[primary_bh_explosion_bin_nums, "kstar_1"] < 13].drop_duplicates(subset="bin_num", keep="last")
     primary_sep = primary_pre_sn["sep"].values
     primary_progenitor_mass = primary_pre_sn["mass_1"].values
+    primary_progenitor_type = primary_pre_sn["kstar_1"].values
 
     # repeat for secondary BHs
     secondary_bh_rows = pop.bpp[pop.bpp["row_num"].isin(pop.bpp[pop.bpp["evol_type"] == 16]["row_num"] + 1) & (pop.bpp["kstar_2"] == 14)]
@@ -394,6 +395,7 @@ def get_kick_stats(pop):
     secondary_pre_sn = pop.bpp.loc[secondary_bh_explosion_bin_nums][pop.bpp.loc[secondary_bh_explosion_bin_nums, "kstar_2"] < 13].drop_duplicates(subset="bin_num", keep="last")
     secondary_sep = secondary_pre_sn["sep"].values
     secondary_progenitor_mass = secondary_pre_sn["mass_2"].values
+    secondary_progenitor_type = secondary_pre_sn["kstar_2"].values
 
     # now use the bin_nums to get the specific kick information for primaries
     primary_kick_rows = pop.kick_info.loc[primary_bh_explosion_bin_nums][pop.kick_info.loc[primary_bh_explosion_bin_nums]["star"] == 1]
@@ -422,6 +424,7 @@ def get_kick_stats(pop):
     kick_stat_dict["companion_mass"] = np.concatenate([primary_companion_mass, secondary_companion_mass])
     kick_stat_dict["separation_at_sn"] = np.concatenate([primary_sep, secondary_sep])
     kick_stat_dict["progenitor_mass"] = np.concatenate([primary_progenitor_mass, secondary_progenitor_mass])
+    kick_stat_dict["progenitor_type"] = np.concatenate([primary_progenitor_type, secondary_progenitor_type])
     kick_stat_dict["is_primary"] = is_primary
     kick_stat_dict["bin_num"] = np.concatenate([primary_bh_explosion_bin_nums, secondary_bh_explosion_bin_nums])
 
