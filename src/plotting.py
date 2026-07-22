@@ -378,7 +378,7 @@ def estimate_scale_height(z, bins=np.linspace(0, 3, 201),
 def estimate_scale_height_cdf(
         z, plot=False, fig=None, ax=None, show=True,
         label="", colour="black", scale_height_loc=None,
-        R=None, Rlims=(7.5, 8.5), verbose=False, weight_bins=False, **kwargs):
+        R=None, Rlims=(7.5, 8.5), verbose=False, weight_bins=False, lw=4, zorder=1, **kwargs):
     """Estimate the scale height of a distribution given z-positions using the cumulative distribution function (CDF).
     This method does not assume a model, but instead just finds the z-value at which the CDF reaches 1 - 1/e ~ 0.63, which corresponds to the scale height for an exponential distribution."""
     z = np.abs(z)
@@ -409,14 +409,14 @@ def estimate_scale_height_cdf(
         subsample_z = np.geomspace(sorted_z.min(), sorted_z.max(), 1000)
         cdf_interp = np.interp(subsample_z, sorted_z, cdf)
 
-        ax.plot(subsample_z, cdf_interp, label=label, color=colour, lw=4)
+        ax.plot(subsample_z, cdf_interp, label=label, color=colour, lw=lw, zorder=zorder)
 
         if scale_height_loc is not None:
             loc = 0.5 if scale_height_loc is None else scale_height_loc
-            ax.axvline(scale_height, color=colour, ls='--', alpha=0.75, lw=2)
+            ax.axvline(scale_height, color=colour, ls='--', alpha=0.75, lw=lw/2)
             ax.annotate(f"{scale_height * 1000:.0f} pc", xy=(scale_height, loc), fontsize=0.7*fs,
                         rotation=0, color=colour, ha='center', va='top',
-                        bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=colour, lw=2))
+                        bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=colour, lw=lw/2))
 
         ax.set(
             xlabel="Distance from the Galactic plane, |z| (kpc)",
