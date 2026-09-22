@@ -26,7 +26,7 @@ plt.rcParams.update(params)
 
 
 def plot_side_on_density(xs, zs, labels, xlim=20, zlim=12, n_bins=200, sigma=1.0, apply_smoothing=True,
-                         contours=[1, 10, 100, 1000], norm="log",
+                         contours=[1, 10, 100, 1000], norm="log", radial=False,
                          fig=None, ax=None, show=True):
     """Plot side-on density distribution of objects given x and z coordinates.
 
@@ -144,10 +144,13 @@ def plot_side_on_density(xs, zs, labels, xlim=20, zlim=12, n_bins=200, sigma=1.0
 
     fig.colorbar(im, label='Number of objects', ax=ax)
 
+    if radial:
+        ax.axvline(0, color='white', ls='--', lw=1, alpha=0.5)
+
     ax.set(
         xlim=(-xlim, xlim),
         ylim=(-zlim, zlim),
-        xlabel=r'Galactocentric $x$ [kpc]',
+        xlabel=r'Galactocentric radius, $R \, [\rm kpc]$' if radial else r'Galactocentric $x$ [kpc]',
         ylabel=r'Galactocentric $z$ [kpc]',
     )
     ax.set_facecolor('black')
